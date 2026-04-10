@@ -738,6 +738,15 @@ export default function AdminUsersPage() {
                 <div className="flex items-center gap-4">
                   <div className="w-48">
                     <Select
+                      items={roles.map((role) => ({
+                        value: role.id,
+                        label:
+                          role.name === "super_admin"
+                            ? t("admin.superAdmin")
+                            : role.name === "admin"
+                            ? t("admin.adminRole")
+                            : t("admin.moderator"),
+                      }))}
                       value={selectedPermRole}
                       onValueChange={(val) => setSelectedPermRole(val ?? "")}
                     >
@@ -925,6 +934,15 @@ export default function AdminUsersPage() {
               <div className="space-y-1.5">
                 <Label>{t("admin.role")}</Label>
                 <Select
+                  items={roles.map((role) => ({
+                    value: role.id,
+                    label:
+                      role.name === "super_admin"
+                        ? t("admin.superAdmin")
+                        : role.name === "admin"
+                        ? t("admin.adminRole")
+                        : t("admin.moderator"),
+                  }))}
                   value={adminFormData.role_id}
                   onValueChange={(val) =>
                     setAdminFormData({ ...adminFormData, role_id: val ?? "" })
@@ -1037,6 +1055,17 @@ export default function AdminUsersPage() {
                 <div className="space-y-1.5">
                   <Label>{t("admin.role")}</Label>
                   <Select
+                    items={roles
+                      .filter((r) => r.id !== moveTargetAdmin.role_id)
+                      .map((role) => ({
+                        value: role.id,
+                        label:
+                          role.name === "super_admin"
+                            ? t("admin.superAdmin")
+                            : role.name === "admin"
+                            ? t("admin.adminRole")
+                            : t("admin.moderator"),
+                      }))}
                     value={moveTargetRoleId}
                     onValueChange={(val) => setMoveTargetRoleId(val ?? "")}
                   >
