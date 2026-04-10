@@ -6,6 +6,8 @@ import "@/i18n";
 import { AdminPageWrapper } from "@/components/admin-page-wrapper";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
 import { Store, Users, Tag, Ticket, Clock, TrendingUp } from "lucide-react";
 import {
   BarChart,
@@ -35,6 +37,31 @@ interface Stats {
 }
 
 const COLORS = ["#862045", "#A83258", "#C94468", "#D96B8A", "#E89BAE"];
+
+const ICON_BG: Record<string, string> = {
+  Store: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
+  Users: "bg-violet-500/10 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400",
+  Tag: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400",
+  Ticket: "bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
+  Clock: "bg-orange-500/10 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400",
+  TrendingUp: "bg-primary/10 text-primary",
+};
+
+function StatCardSkeleton({ index }: { index: number }) {
+  return (
+    <Card className={`animate-fade-in stagger-${index + 1}`}>
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2.5 flex-1">
+            <Skeleton className="h-3.5 w-24" />
+            <Skeleton className="h-7 w-16" />
+          </div>
+          <Skeleton className="h-11 w-11 rounded-xl" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation();
@@ -151,168 +178,235 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
-  if (loading) {
-    return (
-      <AdminPageWrapper>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="pb-2">
-                <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 w-16 bg-muted rounded animate-pulse" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </AdminPageWrapper>
-    );
-  }
-
-  const statCards = [
-    {
-      title: t("admin.totalProviders"),
-      value: stats?.totalProviders ?? 0,
-      icon: Store,
-    },
-    {
-      title: t("admin.totalCustomers"),
-      value: stats?.totalCustomers ?? 0,
-      icon: Users,
-    },
-    {
-      title: t("admin.totalDeals"),
-      value: stats?.totalDeals ?? 0,
-      icon: Tag,
-    },
-    {
-      title: t("admin.totalRedemptions"),
-      value: stats?.totalRedemptions ?? 0,
-      icon: Ticket,
-    },
-    {
-      title: t("admin.pendingProviders"),
-      value: stats?.pendingProviders ?? 0,
-      icon: Clock,
-    },
-    {
-      title: t("admin.activeDeals"),
-      value: stats?.activeDeals ?? 0,
-      icon: TrendingUp,
-    },
-  ];
+  const statCards = stats
+    ? [
+        {
+          title: t("admin.totalProviders"),
+          value: stats.totalProviders,
+          icon: Store,
+          iconKey: "Store",
+        },
+        {
+          title: t("admin.totalCustomers"),
+          value: stats.totalCustomers,
+          icon: Users,
+          iconKey: "Users",
+        },
+        {
+          title: t("admin.totalDeals"),
+          value: stats.totalDeals,
+          icon: Tag,
+          iconKey: "Tag",
+        },
+        {
+          title: t("admin.totalRedemptions"),
+          value: stats.totalRedemptions,
+          icon: Ticket,
+          iconKey: "Ticket",
+        },
+        {
+          title: t("admin.pendingProviders"),
+          value: stats.pendingProviders,
+          icon: Clock,
+          iconKey: "Clock",
+        },
+        {
+          title: t("admin.activeDeals"),
+          value: stats.activeDeals,
+          icon: TrendingUp,
+          iconKey: "TrendingUp",
+        },
+      ]
+    : [];
 
   return (
     <AdminPageWrapper>
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">
-          {t("admin.dashboard")}
-        </h2>
+        <PageHeader title={t("admin.dashboard")} />
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {statCards.map((card) => (
-            <Card key={card.title}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {card.title}
-                </CardTitle>
-                <card.icon className="h-5 w-5 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{card.value}</div>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Stat cards */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <StatCardSkeleton key={i} index={i} />
+              ))
+            : statCards.map((card, i) => (
+                <Card
+                  key={card.title}
+                  className={`animate-fade-in stagger-${i + 1} hover:shadow-md transition-shadow duration-200`}
+                >
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                          {card.title}
+                        </p>
+                        <p className="text-2xl font-bold tracking-tight">
+                          {card.value.toLocaleString()}
+                        </p>
+                      </div>
+                      <div
+                        className={`flex items-center justify-center w-11 h-11 rounded-xl ${
+                          ICON_BG[card.iconKey]
+                        }`}
+                      >
+                        <card.icon className="h-5 w-5" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
         </div>
 
+        {/* Charts */}
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">
+          <Card className="animate-fade-in stagger-3">
+            <CardHeader className="pb-0">
+              <CardTitle className="text-sm font-medium">
                 {t("admin.charts.dealsByCategory")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]" dir="ltr">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats?.dealsByCategory || []}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="name"
-                      fontSize={12}
-                      tickLine={false}
-                    />
-                    <YAxis fontSize={12} tickLine={false} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {loading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Skeleton className="h-full w-full rounded-lg" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats?.dealsByCategory || []}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.5} />
+                      <XAxis
+                        dataKey="name"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "var(--color-muted-foreground)" }}
+                      />
+                      <YAxis
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "var(--color-muted-foreground)" }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "var(--color-card)",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        }}
+                      />
+                      <Bar dataKey="count" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">
+          <Card className="animate-fade-in stagger-4">
+            <CardHeader className="pb-0">
+              <CardTitle className="text-sm font-medium">
                 {t("admin.charts.providersByStatus")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]" dir="ltr">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={stats?.providerStatusData || []}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      dataKey="value"
-                      label={({ name, value }) => `${name}: ${value}`}
-                    >
-                      {(stats?.providerStatusData || []).map(
-                        (_entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                          />
-                        )
-                      )}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                {loading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Skeleton className="h-full w-full rounded-lg" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats?.providerStatusData || []}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        dataKey="value"
+                        label={({ name, value }) => `${name}: ${value}`}
+                        labelLine={false}
+                        strokeWidth={2}
+                        stroke="var(--color-card)"
+                      >
+                        {(stats?.providerStatusData || []).map(
+                          (_entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                            />
+                          )
+                        )}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "var(--color-card)",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base">
+          <Card className="lg:col-span-2 animate-fade-in stagger-5">
+            <CardHeader className="pb-0">
+              <CardTitle className="text-sm font-medium">
                 {t("admin.charts.redemptionsOverTime")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]" dir="ltr">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={stats?.redemptionsByMonth || []}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="month"
-                      fontSize={12}
-                      tickLine={false}
-                    />
-                    <YAxis fontSize={12} tickLine={false} />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="count"
-                      stroke="var(--chart-1)"
-                      strokeWidth={2}
-                      dot={{ fill: "var(--chart-1)" }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {loading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Skeleton className="h-full w-full rounded-lg" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={stats?.redemptionsByMonth || []}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.5} />
+                      <XAxis
+                        dataKey="month"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "var(--color-muted-foreground)" }}
+                      />
+                      <YAxis
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "var(--color-muted-foreground)" }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "var(--color-card)",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="count"
+                        stroke="var(--chart-1)"
+                        strokeWidth={2.5}
+                        dot={{ fill: "var(--chart-1)", strokeWidth: 0, r: 4 }}
+                        activeDot={{ r: 6, strokeWidth: 2, stroke: "var(--color-card)" }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>

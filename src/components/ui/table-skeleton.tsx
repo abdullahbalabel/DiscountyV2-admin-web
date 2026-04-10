@@ -1,0 +1,49 @@
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+interface TableSkeletonProps {
+  columns: number;
+  rows?: number;
+}
+
+export function TableSkeleton({ columns, rows = 5 }: TableSkeletonProps) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {Array.from({ length: columns }).map((_, i) => (
+            <TableHead key={i}>
+              <Skeleton className="h-4 w-20" />
+            </TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {Array.from({ length: rows }).map((_, rowIdx) => (
+          <TableRow key={rowIdx}>
+            {Array.from({ length: columns }).map((_, colIdx) => (
+              <TableCell key={colIdx}>
+                <Skeleton
+                  className={`h-4 ${
+                    colIdx === 0
+                      ? "w-32"
+                      : colIdx === columns - 1
+                      ? "w-16"
+                      : "w-24"
+                  } stagger-${Math.min(rowIdx + 1, 6)}`}
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}

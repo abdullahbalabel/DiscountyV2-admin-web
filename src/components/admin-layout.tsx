@@ -66,14 +66,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 z-50 w-64 bg-card border-border flex flex-col transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 z-50 w-64 bg-card border-border flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
           isRtl ? "right-0 border-l" : "left-0 border-r"
         } ${
           sidebarOpen
@@ -83,48 +83,85 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="flex items-center justify-between h-16 px-6 border-b border-border">
-          <h1 className="text-lg font-bold text-primary truncate">
-            {t("admin.title")}
-          </h1>
+        {/* Logo */}
+        <div className="flex items-center justify-between h-16 px-5 border-b border-border/60">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10">
+              <img
+                src="/logo.svg"
+                alt="Discounty"
+                width={22}
+                height={22}
+              />
+            </div>
+            <h1 className="text-base font-semibold text-foreground tracking-tight">
+              {t("admin.title")}
+            </h1>
+          </div>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             className="lg:hidden"
             onClick={() => setSidebarOpen(false)}
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </Button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive(item.href)
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              }`}
-            >
-              <item.icon className="h-5 w-5 shrink-0" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          {navItems.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative ${
+                  active
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <item.icon
+                  className={`h-[18px] w-[18px] shrink-0 transition-colors ${
+                    active
+                      ? "text-primary-foreground"
+                      : "text-muted-foreground group-hover:text-foreground"
+                  }`}
+                />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
 
-        <Separator />
+        <Separator className="opacity-50" />
 
-        <div className="p-4">
+        {/* User section */}
+        <div className="p-4 space-y-2">
+          {user && (
+            <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase shrink-0">
+                {user.email?.charAt(0) || "A"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-foreground truncate">
+                  {user.email}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {t("admin.title")}
+                </p>
+              </div>
+            </div>
+          )}
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground"
+            className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
             onClick={signOut}
           >
-            <LogOut className="h-5 w-5" />
-            <span>{t("admin.logout")}</span>
+            <LogOut className="h-4 w-4" />
+            <span className="text-sm">{t("admin.logout")}</span>
           </Button>
         </div>
       </aside>
@@ -132,23 +169,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 lg:px-6 shrink-0">
+        <header className="h-14 border-b border-border/60 bg-card/80 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 shrink-0 sticky top-0 z-30">
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             className="lg:hidden"
             onClick={() => setSidebarOpen(true)}
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-4 w-4" />
           </Button>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-1.5 ml-auto">
             {mounted && (
               <Button
-                variant="outline"
-                size="icon"
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 aria-label={theme === "dark" ? t("admin.switchToLight") : t("admin.switchToDark")}
+                className="rounded-lg"
               >
                 {theme === "dark" ? (
                   <Sun className="h-4 w-4" />
@@ -159,25 +197,23 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             )}
 
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={toggleLanguage}
-              className="gap-2"
+              className="gap-1.5 text-muted-foreground"
             >
-              <Globe className="h-4 w-4" />
-              {i18n.language === "en" ? "عربي" : "English"}
+              <Globe className="h-3.5 w-3.5" />
+              <span className="text-xs font-medium">
+                {i18n.language === "en" ? "عربي" : "EN"}
+              </span>
             </Button>
-
-            {user && (
-              <div className="text-sm text-muted-foreground hidden sm:block">
-                {user.email}
-              </div>
-            )}
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6 animate-fade-in">
+          {children}
+        </main>
       </div>
     </div>
   );

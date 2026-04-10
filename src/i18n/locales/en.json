@@ -174,6 +174,25 @@
     "allProviders": "All approved providers",
     "allCustomers": "All active customers",
     "filterByRole": "Filter by Role",
-    "allRoles": "All Roles"
+    "allRoles": "All Roles",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "resetPasswordSubtitle": "Enter your new password below",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "updatePassword": "Update Password",
+    "updating": "Updating...",
+    "passwordResetSuccess": "Password updated successfully! Redirecting to login...",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "sendResetLink": "Send Reset Link",
+    "sending": "Sending...",
+    "forgotPasswordSent": "If an account exists with this email, a reset link has been sent. Check your inbox.",
+    "backToLogin": "Back to Login",
+    "welcomeBack": "Welcome back",
+    "loginHeroTitle": "Manage your platform with ease",
+    "loginHeroDesc": "Monitor deals, manage providers, and engage your customers — all from one dashboard.",
+    "checkYourEmail": "Check your email",
+    "forgotPasswordHint": "Enter your email address and we'll send you a link to reset your password."
   }
 }

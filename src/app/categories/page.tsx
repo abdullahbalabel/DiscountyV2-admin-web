@@ -13,6 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -28,7 +32,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Pencil, Plus, Search, Eye, EyeOff } from "lucide-react";
+import { Icon } from "@iconify-icon/react";
+import { IconPicker } from "@/components/ui/icon-picker";
+import { Pencil, Plus, Search, Eye, EyeOff, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CategoriesPage() {
@@ -160,30 +166,39 @@ export default function CategoriesPage() {
 
   return (
     <AdminPageWrapper>
-
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">{t("admin.categories")}</h2>
+      <div className="space-y-5">
+        <PageHeader
+          title={t("admin.categories")}
+          action={
             <Button onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 me-1.5" />
               {t("admin.addCategory")}
             </Button>
-          </div>
+          }
+        />
 
-          <Card>
-            <CardHeader>
-              <div className="relative max-w-sm">
-                <Search className="absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground ltr:left-3 rtl:right-3" />
-                <Input
-                  placeholder={t("admin.search")}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="ltr:pl-9 rtl:pr-9"
+        <Card className="animate-fade-in stagger-1">
+          <CardHeader>
+            <div className="relative max-w-sm">
+              <Search className="absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground start-3" />
+              <Input
+                placeholder={t("admin.search")}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="ps-9"
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto -mx-4 px-4">
+              {loading ? (
+                <TableSkeleton columns={6} />
+              ) : categories.length === 0 ? (
+                <EmptyState
+                  icon={FolderOpen}
+                  title={t("admin.noResults")}
                 />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
+              ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -192,150 +207,149 @@ export default function CategoriesPage() {
                       <TableHead>{t("admin.icon")}</TableHead>
                       <TableHead>{t("admin.sortOrder")}</TableHead>
                       <TableHead>{t("admin.status")}</TableHead>
-                      <TableHead>{t("admin.actions")}</TableHead>
+                      <TableHead className="text-end">{t("admin.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center">
-                          {t("admin.loading")}
+                    {categories.map((category) => (
+                      <TableRow
+                        key={category.id}
+                        className="hover:bg-muted/40 transition-colors"
+                      >
+                        <TableCell className="font-medium">
+                          {category.name}
                         </TableCell>
-                      </TableRow>
-                    ) : categories.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center">
-                          {t("admin.noResults")}
+                        <TableCell className="text-muted-foreground">
+                          {category.name_ar}
                         </TableCell>
-                      </TableRow>
-                    ) : (
-                      categories.map((category) => (
-                        <TableRow key={category.id}>
-                          <TableCell className="font-medium">
-                            {category.name}
-                          </TableCell>
-                          <TableCell>{category.name_ar}</TableCell>
-                          <TableCell>{category.icon || "—"}</TableCell>
-                          <TableCell>{category.sort_order}</TableCell>
-                          <TableCell>
-                            <span
-                              className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                                category.is_active
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}
+                        <TableCell>
+                          {category.icon ? (
+                            <Icon icon={`material-symbols:${category.icon}`} width={22} height={22} />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {category.sort_order}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={
+                              category.is_active
+                                ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border-none"
+                                : "bg-muted text-muted-foreground border-none"
+                            }
+                          >
+                            {category.is_active
+                              ? t("admin.active")
+                              : t("admin.inactive")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-0.5 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => openEditDialog(category)}
                             >
-                              {category.is_active
-                                ? t("admin.active")
-                                : t("admin.inactive")}
-                            </span>
-                          </TableCell>
-                           <TableCell>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openEditDialog(category)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={category.is_active ? "text-orange-500" : "text-green-600"}
-                                onClick={() => handleToggleVisibility(category)}
-                                title={category.is_active ? (t("admin.hide") || "Hide") : (t("admin.show") || "Show")}
-                              >
-                                {category.is_active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className={
+                                category.is_active
+                                  ? "text-orange-500 hover:text-orange-600 hover:bg-orange-500/10"
+                                  : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
+                              }
+                              onClick={() => handleToggleVisibility(category)}
+                              title={category.is_active ? (t("admin.hide") || "Hide") : (t("admin.show") || "Show")}
+                            >
+                              {category.is_active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
-              </div>
-            </CardContent>
-          </Card>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingCategory
-                    ? t("admin.editCategory")
-                    : t("admin.addCategory")}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>{t("admin.categoryName")}</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    dir="ltr"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t("admin.categoryNameAr")}</Label>
-                  <Input
-                    value={formData.name_ar}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name_ar: e.target.value })
-                    }
-                    dir="rtl"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t("admin.icon")}</Label>
-                  <Input
-                    value={formData.icon}
-                    onChange={(e) =>
-                      setFormData({ ...formData, icon: e.target.value })
-                    }
-                    placeholder="e.g., restaurant, shopping_bag"
-                    dir="ltr"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t("admin.sortOrder")}</Label>
-                  <Input
-                    type="number"
-                    value={formData.sort_order}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        sort_order: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    dir="ltr"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={formData.is_active}
-                    onCheckedChange={(checked) =>
-                      setFormData({ ...formData, is_active: checked })
-                    }
-                  />
-                  <Label>{t("admin.active")}</Label>
-                </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingCategory
+                  ? t("admin.editCategory")
+                  : t("admin.addCategory")}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>{t("admin.categoryName")}</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  dir="ltr"
+                />
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  {t("admin.cancel")}
-                </Button>
-                <Button onClick={handleSave}>
-                  {t("admin.save")}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-
+              <div className="space-y-1.5">
+                <Label>{t("admin.categoryNameAr")}</Label>
+                <Input
+                  value={formData.name_ar}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name_ar: e.target.value })
+                  }
+                  dir="rtl"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t("admin.icon")}</Label>
+                <IconPicker
+                  value={formData.icon}
+                  onChange={(icon) => setFormData({ ...formData, icon })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t("admin.sortOrder")}</Label>
+                <Input
+                  type="number"
+                  value={formData.sort_order}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      sort_order: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  dir="ltr"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, is_active: checked })
+                  }
+                />
+                <Label>{t("admin.active")}</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                {t("admin.cancel")}
+              </Button>
+              <Button onClick={handleSave}>
+                {t("admin.save")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </AdminPageWrapper>
   );
 }

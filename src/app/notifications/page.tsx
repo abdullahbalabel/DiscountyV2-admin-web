@@ -16,7 +16,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader } from "@/components/ui/page-header";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -81,54 +84,6 @@ interface GroupedNotification {
   count: number;
   firstCreated: string;
   sampleNotif: Notification;
-}
-
-function groupNotifications(data: Notification[]): (Notification | GroupedNotification)[] {
-  const result: (Notification | GroupedNotification)[] = [];
-  const broadcastGroups = new Map<string, Notification[]>();
-
-  for (const notif of data) {
-    if (notif.type === "admin_broadcast") {
-      const key = `${notif.title}||${notif.body}`;
-      const group = broadcastGroups.get(key);
-      if (group) {
-        group.push(notif);
-      } else {
-        broadcastGroups.set(key, [notif]);
-      }
-    } else {
-      result.push(notif);
-    }
-  }
-
-  for (const [, group] of broadcastGroups) {
-    if (group.length > 1) {
-      const sorted = [...group].sort(
-        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-      result.push({
-        isGroup: true,
-        groupId: `${sorted[0].title}||${sorted[0].body}`,
-        title: sorted[0].title,
-        body: sorted[0].body,
-        type: "admin_broadcast",
-        count: group.length,
-        firstCreated: sorted[0].created_at,
-        sampleNotif: sorted[0],
-      });
-    } else {
-      result.push(group[0]);
-    }
-  }
-
-  result.sort(
-    (a, b) =>
-      new Date("created_at" in a ? a.created_at : a.firstCreated).getTime() -
-      new Date("created_at" in b ? b.created_at : b.firstCreated).getTime()
-  );
-  result.reverse();
-
-  return result;
 }
 
 export default function NotificationsPage() {
@@ -304,7 +259,6 @@ export default function NotificationsPage() {
         );
       }
 
-      // Build grouped result: broadcasts collapsed, others as-is
       const result: (Notification | GroupedNotification)[] = [];
       const broadcastGroups = new Map<string, Notification[]>();
 
@@ -493,7 +447,7 @@ export default function NotificationsPage() {
       .eq("title", group.title)
       .eq("body", group.body);
 
-      if (data) {
+    if (data) {
       const userIds = data.map((n) => n.user_id);
       const readMap: Record<string, boolean> = {};
       data.forEach((n) => {
@@ -573,118 +527,99 @@ export default function NotificationsPage() {
   };
 
   const getTypeBadge = (type: string) => {
-    switch (type) {
-      case "admin_broadcast":
-        return (
-          <Badge className="bg-[#862045]/10 text-[#862045] dark:bg-[#E89BAE]/20 dark:text-[#E89BAE] border-none">
-            {t("admin.adminBroadcast")}
-          </Badge>
-        );
-      case "admin_message":
-        return (
-          <Badge className="bg-blue-500/10 text-blue-600 dark:bg-blue-400/20 dark:text-blue-400 border-none">
-            {t("admin.adminMessage")}
-          </Badge>
-        );
-      case "deal_redeemed":
-        return (
-          <Badge className="bg-green-500/10 text-green-600 dark:bg-green-400/20 dark:text-green-400 border-none">
-            Deal Redeemed
-          </Badge>
-        );
-      case "new_deal":
-        return (
-          <Badge className="bg-amber-500/10 text-amber-600 dark:bg-amber-400/20 dark:text-amber-400 border-none">
-            New Deal
-          </Badge>
-        );
-      case "account_activity":
-        return (
-          <Badge className="bg-purple-500/10 text-purple-600 dark:bg-purple-400/20 dark:text-purple-400 border-none">
-            Account Activity
-          </Badge>
-        );
-      case "deal_expiring":
-        return (
-          <Badge className="bg-orange-500/10 text-orange-600 dark:bg-orange-400/20 dark:text-orange-400 border-none">
-            Deal Expiring
-          </Badge>
-        );
-      case "review_received":
-        return (
-          <Badge className="bg-cyan-500/10 text-cyan-600 dark:bg-cyan-400/20 dark:text-cyan-400 border-none">
-            Review Received
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">{type}</Badge>;
-    }
+    const styles: Record<string, string> = {
+      admin_broadcast: "bg-primary/10 text-primary border-none",
+      admin_message: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400 border-none",
+      deal_redeemed: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border-none",
+      new_deal: "bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400 border-none",
+      account_activity: "bg-purple-500/10 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400 border-none",
+      deal_expiring: "bg-orange-500/10 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400 border-none",
+      review_received: "bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-400 border-none",
+    };
+    const labels: Record<string, string> = {
+      admin_broadcast: t("admin.adminBroadcast"),
+      admin_message: t("admin.adminMessage"),
+      deal_redeemed: "Deal Redeemed",
+      new_deal: "New Deal",
+      account_activity: "Account Activity",
+      deal_expiring: "Deal Expiring",
+      review_received: "Review Received",
+    };
+    return (
+      <Badge className={styles[type] || "bg-muted text-muted-foreground border-none"}>
+        {labels[type] || type}
+      </Badge>
+    );
   };
 
   return (
     <AdminPageWrapper>
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">{t("admin.notifications")}</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t("admin.totalNotifications")}
-            </p>
-          </div>
-          <Button onClick={() => setSendDialogOpen(true)}>
-            <Bell className="h-4 w-4 mr-2" />
-            {t("admin.sendNotification")}
-          </Button>
-        </div>
+        <PageHeader
+          title={t("admin.notifications")}
+          description={t("admin.totalNotifications")}
+          action={
+            <Button onClick={() => setSendDialogOpen(true)}>
+              <Bell className="h-4 w-4 me-1.5" />
+              {t("admin.sendNotification")}
+            </Button>
+          }
+        />
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                {t("admin.totalNotifications")}
-              </span>
-              <div className="h-9 w-9 rounded-lg bg-[#862045]/10 flex items-center justify-center">
-                <BellRing className="h-4 w-4 text-[#862045]" />
+          <Card className="animate-fade-in stagger-1">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                    {t("admin.totalNotifications")}
+                  </p>
+                  <p className="text-2xl font-bold tracking-tight">{stats.total}</p>
+                </div>
+                <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/10 text-primary">
+                  <BellRing className="h-5 w-5" />
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                {t("admin.unreadCount")}
-              </span>
-              <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                <Mail className="h-4 w-4 text-amber-600" />
+          <Card className="animate-fade-in stagger-2">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                    {t("admin.unreadCount")}
+                  </p>
+                  <p className="text-2xl font-bold tracking-tight">{stats.unread}</p>
+                </div>
+                <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
+                  <Mail className="h-5 w-5" />
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.unread}</div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                {t("admin.sentToday")}
-              </span>
-              <div className="h-9 w-9 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <CalendarDays className="h-4 w-4 text-green-600" />
+          <Card className="animate-fade-in stagger-3">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                    {t("admin.sentToday")}
+                  </p>
+                  <p className="text-2xl font-bold tracking-tight">{stats.sentToday}</p>
+                </div>
+                <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+                  <CalendarDays className="h-5 w-5" />
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.sentToday}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Main Content */}
-        <Card>
+        <Card className="animate-fade-in stagger-2">
           <CardHeader>
             <div className="flex flex-col gap-4">
               <Tabs
@@ -699,24 +634,24 @@ export default function NotificationsPage() {
                 <TabsList>
                   <TabsTrigger value="all">{t("admin.all")}</TabsTrigger>
                   <TabsTrigger value="unread">
-                    <Mail className="h-3.5 w-3.5 mr-1.5" />
+                    <Mail className="h-3.5 w-3.5 me-1.5" />
                     {t("admin.unread")}
                   </TabsTrigger>
                   <TabsTrigger value="read">
-                    <MailOpen className="h-3.5 w-3.5 mr-1.5" />
+                    <MailOpen className="h-3.5 w-3.5 me-1.5" />
                     {t("admin.read")}
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground ltr:left-3 rtl:right-3" />
+                  <Search className="absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground start-3" />
                   <Input
                     placeholder={t("admin.search")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="ltr:pl-9 rtl:pr-9"
+                    className="ps-9"
                   />
                 </div>
                 <Select
@@ -754,38 +689,30 @@ export default function NotificationsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("admin.titleLabel")}</TableHead>
-                    <TableHead>{t("admin.description")}</TableHead>
-                    <TableHead>{t("admin.type")}</TableHead>
-                    <TableHead>{t("admin.status")}</TableHead>
-                    <TableHead>{t("admin.createdAt")}</TableHead>
-                    <TableHead className="text-right">
-                      {t("admin.actions")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
+            <div className="overflow-x-auto -mx-4 px-4">
+              {loading ? (
+                <TableSkeleton columns={6} />
+              ) : notifications.length === 0 ? (
+                <EmptyState
+                  icon={Bell}
+                  title={t("admin.noResults")}
+                />
+              ) : (
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center">
-                        {t("admin.loading")}
-                      </TableCell>
+                      <TableHead>{t("admin.titleLabel")}</TableHead>
+                      <TableHead>{t("admin.description")}</TableHead>
+                      <TableHead>{t("admin.type")}</TableHead>
+                      <TableHead>{t("admin.status")}</TableHead>
+                      <TableHead>{t("admin.createdAt")}</TableHead>
+                      <TableHead className="text-end">
+                        {t("admin.actions")}
+                      </TableHead>
                     </TableRow>
-                  ) : notifications.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-12">
-                        <Bell className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-                        <p className="text-muted-foreground">
-                          {t("admin.noResults")}
-                        </p>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    notifications.map((item) => {
+                  </TableHeader>
+                  <TableBody>
+                    {notifications.map((item) => {
                       if ("isGroup" in item) {
                         const group = item as GroupedNotification;
                         const isExpanded = expandedGroups.has(group.groupId);
@@ -795,12 +722,12 @@ export default function NotificationsPage() {
 
                         return (
                           <React.Fragment key={group.groupId}>
-                            <TableRow key={group.groupId}>
+                            <TableRow className="hover:bg-muted/40 transition-colors">
                               <TableCell className="font-medium max-w-[200px]">
                                 <button
                                   type="button"
                                   onClick={() => handleToggleGroup(group)}
-                                  className="flex items-center gap-2 w-full text-left hover:opacity-80 transition-opacity"
+                                  className="flex items-center gap-2 w-full text-start hover:opacity-80 transition-opacity"
                                 >
                                   {isExpanded ? (
                                     <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -810,7 +737,7 @@ export default function NotificationsPage() {
                                   <span className="truncate">{group.title}</span>
                                 </button>
                               </TableCell>
-                              <TableCell className="max-w-[280px] truncate text-muted-foreground">
+                              <TableCell className="max-w-[280px] truncate text-muted-foreground text-sm">
                                 {group.body}
                               </TableCell>
                               <TableCell>{getTypeBadge(group.type)}</TableCell>
@@ -819,21 +746,21 @@ export default function NotificationsPage() {
                                   {group.count} {t("admin.recipients") || "recipients"}
                                 </Badge>
                               </TableCell>
-                              <TableCell dir="ltr" className="text-muted-foreground">
+                              <TableCell dir="ltr" className="text-muted-foreground text-xs">
                                 {new Date(group.firstCreated).toLocaleString()}
                               </TableCell>
                               <TableCell>
-                                <div className="flex gap-1 justify-end">
+                                <div className="flex gap-0.5 justify-end">
                                   <Button
                                     variant="ghost"
-                                    size="icon"
+                                    size="icon-sm"
                                     onClick={() => handleToggleGroup(group)}
                                   >
-                                    <Users className="h-4 w-4" />
+                                    <Users className="h-3.5 w-3.5" />
                                   </Button>
                                   <Button
                                     variant="ghost"
-                                    size="icon"
+                                    size="icon-sm"
                                     className="text-destructive"
                                     onClick={() => {
                                       setSelectedGroup(group);
@@ -841,13 +768,13 @@ export default function NotificationsPage() {
                                       setDeleteDialogOpen(true);
                                     }}
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-3.5 w-3.5" />
                                   </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
                             {isExpanded && (
-                              <TableRow key={`${group.groupId}-details`}>
+                              <TableRow>
                                 <TableCell colSpan={6} className="bg-muted/30 p-0">
                                   <div className="px-6 py-3">
                                     {isLoading ? (
@@ -860,7 +787,7 @@ export default function NotificationsPage() {
                                           <span>
                                             {t("admin.totalRecipients") || "Total"}: {recipients.length}
                                           </span>
-                                          <span className="text-green-600">
+                                          <span className="text-emerald-600">
                                             {t("admin.read")}: {readCount}
                                           </span>
                                           <span className="text-amber-600">
@@ -884,7 +811,7 @@ export default function NotificationsPage() {
                                             </SelectContent>
                                           </Select>
                                         </div>
-                                        <div className="rounded-md border">
+                                        <div className="rounded-lg border">
                                           <Table>
                                             <TableHeader>
                                               <TableRow>
@@ -911,8 +838,11 @@ export default function NotificationsPage() {
                                                   </TableCell>
                                                   <TableCell className="py-1.5">
                                                     <Badge
-                                                      variant={r.is_read ? "secondary" : "default"}
-                                                      className="text-[10px] px-1.5 py-0"
+                                                      className={
+                                                        r.is_read
+                                                          ? "bg-muted text-muted-foreground border-none text-[10px] px-1.5 py-0"
+                                                          : "bg-primary/10 text-primary border-none text-[10px] px-1.5 py-0"
+                                                      }
                                                     >
                                                       {r.is_read
                                                         ? t("admin.read")
@@ -940,42 +870,49 @@ export default function NotificationsPage() {
 
                       const notif = item as Notification;
                       return (
-                        <TableRow key={notif.id}>
+                        <TableRow
+                          key={notif.id}
+                          className="hover:bg-muted/40 transition-colors"
+                        >
                           <TableCell className="font-medium max-w-[200px] truncate">
                             {notif.title}
                           </TableCell>
-                          <TableCell className="max-w-[280px] truncate text-muted-foreground">
+                          <TableCell className="max-w-[280px] truncate text-muted-foreground text-sm">
                             {notif.body}
                           </TableCell>
                           <TableCell>{getTypeBadge(notif.type)}</TableCell>
                           <TableCell>
                             <Badge
-                              variant={notif.is_read ? "secondary" : "default"}
+                              className={
+                                notif.is_read
+                                  ? "bg-muted text-muted-foreground border-none"
+                                  : "bg-primary/10 text-primary border-none"
+                              }
                             >
                               {notif.is_read
                                 ? t("admin.read")
                                 : t("admin.unread")}
                             </Badge>
                           </TableCell>
-                          <TableCell dir="ltr" className="text-muted-foreground">
+                          <TableCell dir="ltr" className="text-muted-foreground text-xs">
                             {new Date(notif.created_at).toLocaleString()}
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-1 justify-end">
+                            <div className="flex gap-0.5 justify-end">
                               <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon-sm"
                                 onClick={() => {
                                   setSelectedNotif(notif);
                                   setSelectedGroup(null);
                                   setViewDialogOpen(true);
                                 }}
                               >
-                                <Eye className="h-4 w-4" />
+                                <Eye className="h-3.5 w-3.5" />
                               </Button>
                               <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon-sm"
                                 className="text-destructive"
                                 onClick={() => {
                                   setSelectedNotif(notif);
@@ -983,24 +920,24 @@ export default function NotificationsPage() {
                                   setDeleteDialogOpen(true);
                                 }}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           </TableCell>
                         </TableRow>
                       );
-                    })
-                  )}
-                </TableBody>
-              </Table>
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </div>
           </CardContent>
         </Card>
 
         {/* Pagination */}
         {totalCount > pageSize && (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex items-center justify-between animate-fade-in">
+            <p className="text-xs text-muted-foreground">
               {t("admin.showing")} {offset + 1}-
               {Math.min(offset + pageSize, totalCount)} {t("admin.of")}{" "}
               {totalCount}
@@ -1054,21 +991,21 @@ export default function NotificationsPage() {
                     }
                     className={`flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all ${
                       sendForm.targetUser === "all"
-                        ? "border-[#862045] bg-[#862045]/5"
+                        ? "border-primary bg-primary/5"
                         : "border-border hover:border-muted-foreground/30"
                     }`}
                   >
                     <div
                       className={`h-9 w-9 rounded-lg flex items-center justify-center ${
                         sendForm.targetUser === "all"
-                          ? "bg-[#862045]/10"
+                          ? "bg-primary/10"
                           : "bg-muted"
                       }`}
                     >
                       <Users
                         className={`h-4 w-4 ${
                           sendForm.targetUser === "all"
-                            ? "text-[#862045]"
+                            ? "text-primary"
                             : "text-muted-foreground"
                         }`}
                       />
@@ -1089,21 +1026,21 @@ export default function NotificationsPage() {
                     }
                     className={`flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all ${
                       sendForm.targetUser === "providers"
-                        ? "border-[#862045] bg-[#862045]/5"
+                        ? "border-primary bg-primary/5"
                         : "border-border hover:border-muted-foreground/30"
                     }`}
                   >
                     <div
                       className={`h-9 w-9 rounded-lg flex items-center justify-center ${
                         sendForm.targetUser === "providers"
-                          ? "bg-[#862045]/10"
+                          ? "bg-primary/10"
                           : "bg-muted"
                       }`}
                     >
                       <Users
                         className={`h-4 w-4 ${
                           sendForm.targetUser === "providers"
-                            ? "text-[#862045]"
+                            ? "text-primary"
                             : "text-muted-foreground"
                         }`}
                       />
@@ -1124,21 +1061,21 @@ export default function NotificationsPage() {
                     }
                     className={`flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all ${
                       sendForm.targetUser === "customers"
-                        ? "border-[#862045] bg-[#862045]/5"
+                        ? "border-primary bg-primary/5"
                         : "border-border hover:border-muted-foreground/30"
                     }`}
                   >
                     <div
                       className={`h-9 w-9 rounded-lg flex items-center justify-center ${
                         sendForm.targetUser === "customers"
-                          ? "bg-[#862045]/10"
+                          ? "bg-primary/10"
                           : "bg-muted"
                       }`}
                     >
                       <Users
                         className={`h-4 w-4 ${
                           sendForm.targetUser === "customers"
-                            ? "text-[#862045]"
+                            ? "text-primary"
                             : "text-muted-foreground"
                         }`}
                       />
@@ -1159,21 +1096,21 @@ export default function NotificationsPage() {
                     }
                     className={`flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all ${
                       sendForm.targetUser !== "all" && sendForm.targetUser !== "providers" && sendForm.targetUser !== "customers"
-                        ? "border-[#862045] bg-[#862045]/5"
+                        ? "border-primary bg-primary/5"
                         : "border-border hover:border-muted-foreground/30"
                     }`}
                   >
                     <div
                       className={`h-9 w-9 rounded-lg flex items-center justify-center ${
                         sendForm.targetUser !== "all" && sendForm.targetUser !== "providers" && sendForm.targetUser !== "customers"
-                          ? "bg-[#862045]/10"
+                          ? "bg-primary/10"
                           : "bg-muted"
                       }`}
                     >
                       <User
                         className={`h-4 w-4 ${
                           sendForm.targetUser !== "all" && sendForm.targetUser !== "providers" && sendForm.targetUser !== "customers"
-                            ? "text-[#862045]"
+                            ? "text-primary"
                             : "text-muted-foreground"
                         }`}
                       />
@@ -1192,14 +1129,14 @@ export default function NotificationsPage() {
                 </div>
               </div>
 
-              {/* User Search - only visible when specific user is selected */}
+              {/* User Search */}
               {sendForm.targetUser !== "all" && sendForm.targetUser !== "providers" && sendForm.targetUser !== "customers" && (
                 <div className="space-y-2">
                   {selectedUser ? (
                     <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-[#862045]/10 flex items-center justify-center">
-                          <User className="h-4 w-4 text-[#862045]" />
+                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="h-4 w-4 text-primary" />
                         </div>
                         <div>
                           <p className="text-sm font-medium">
@@ -1225,12 +1162,12 @@ export default function NotificationsPage() {
                   ) : (
                     <>
                       <div className="relative">
-                        <Search className="absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground ltr:left-3 rtl:right-3" />
+                        <Search className="absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground start-3" />
                         <Input
                           placeholder="Search users by name..."
                           value={userSearch}
                           onChange={(e) => setUserSearch(e.target.value)}
-                          className="ltr:pl-9 rtl:pr-9"
+                          className="ps-9"
                         />
                       </div>
 
@@ -1259,15 +1196,15 @@ export default function NotificationsPage() {
                                 }}
                                 className="flex items-center gap-3 w-full px-3 py-2.5 text-left hover:bg-muted/50 transition-colors border-b last:border-b-0"
                               >
-                                <div className="h-8 w-8 rounded-full bg-[#862045]/10 flex items-center justify-center flex-shrink-0">
-                                  <User className="h-3.5 w-3.5 text-[#862045]" />
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                  <User className="h-3.5 w-3.5 text-primary" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium truncate">
                                     {user.display_name}
                                   </p>
                                 </div>
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 flex-shrink-0">
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
                                   {user.role}
                                 </Badge>
                               </button>
@@ -1283,7 +1220,7 @@ export default function NotificationsPage() {
               <Separator />
 
               {/* Title */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>{t("admin.notificationTitle")}</Label>
                   <span
@@ -1303,21 +1240,21 @@ export default function NotificationsPage() {
                       setSendForm({ ...sendForm, title: e.target.value })
                     }
                     placeholder="Enter notification title..."
-                    className="ltr:pr-10 rtl:pl-10"
+                    className="pe-10"
                   />
                   <button
                     type="button"
                     onClick={() =>
                       setEmojiTarget(emojiTarget === "title" ? null : "title")
                     }
-                    className="absolute top-1/2 -translate-y-1/2 ltr:right-2 rtl:left-2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute top-1/2 -translate-y-1/2 end-2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Smile className="h-4 w-4" />
                   </button>
                   {emojiTarget === "title" && (
                     <div
                       ref={emojiRef}
-                      className="absolute z-50 mt-1 ltr:right-0 rtl:left-0"
+                      className="absolute z-50 mt-1 end-0"
                     >
                       <EmojiPicker
                         theme={
@@ -1335,7 +1272,7 @@ export default function NotificationsPage() {
               </div>
 
               {/* Body */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>{t("admin.notificationBody")}</Label>
                   <span
@@ -1356,21 +1293,21 @@ export default function NotificationsPage() {
                     }
                     placeholder="Enter notification message..."
                     rows={4}
-                    className="ltr:pr-10 rtl:pl-10"
+                    className="pe-10"
                   />
                   <button
                     type="button"
                     onClick={() =>
                       setEmojiTarget(emojiTarget === "body" ? null : "body")
                     }
-                    className="absolute top-3 ltr:right-2 rtl:left-2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute top-3 end-2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Smile className="h-4 w-4" />
                   </button>
                   {emojiTarget === "body" && (
                     <div
                       ref={emojiRef}
-                      className="absolute z-50 mt-1 ltr:right-0 rtl:left-0"
+                      className="absolute z-50 mt-1 end-0"
                     >
                       <EmojiPicker
                         theme={
@@ -1391,14 +1328,14 @@ export default function NotificationsPage() {
               {(sendForm.title || sendForm.body) && (
                 <>
                   <Separator />
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground text-xs uppercase tracking-wider">
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">
                       {t("admin.preview")}
                     </Label>
-                    <div className="rounded-xl border bg-gradient-to-br from-card to-muted/30 p-4 shadow-sm">
+                    <div className="rounded-xl border bg-gradient-to-br from-card to-muted/30 p-4">
                       <div className="flex items-start gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-[#862045] flex items-center justify-center flex-shrink-0">
-                          <Bell className="h-5 w-5 text-white" />
+                        <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center shrink-0">
+                          <Bell className="h-5 w-5 text-primary-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
@@ -1440,7 +1377,7 @@ export default function NotificationsPage() {
                   (sendForm.targetUser !== "all" && sendForm.targetUser !== "providers" && sendForm.targetUser !== "customers" && !selectedUser)
                 }
               >
-                <Send className="h-4 w-4 mr-2" />
+                <Send className="h-4 w-4 me-1.5" />
                 {sending ? t("admin.loading") : t("admin.send")}
               </Button>
             </DialogFooter>
@@ -1455,10 +1392,10 @@ export default function NotificationsPage() {
             </DialogHeader>
             {selectedNotif && (
               <div className="space-y-4">
-                <div className="rounded-xl border bg-gradient-to-br from-card to-muted/30 p-4 shadow-sm">
+                <div className="rounded-xl border bg-gradient-to-br from-card to-muted/30 p-4">
                   <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-[#862045] flex items-center justify-center flex-shrink-0">
-                      <Bell className="h-5 w-5 text-white" />
+                    <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center shrink-0">
+                      <Bell className="h-5 w-5 text-primary-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold">
@@ -1475,18 +1412,20 @@ export default function NotificationsPage() {
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">
                       {t("admin.type")}
                     </p>
                     {getTypeBadge(selectedNotif.type)}
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">
                       {t("admin.status")}
                     </p>
                     <Badge
-                      variant={
-                        selectedNotif.is_read ? "secondary" : "default"
+                      className={
+                        selectedNotif.is_read
+                          ? "bg-muted text-muted-foreground border-none"
+                          : "bg-primary/10 text-primary border-none"
                       }
                     >
                       {selectedNotif.is_read
@@ -1495,10 +1434,10 @@ export default function NotificationsPage() {
                     </Badge>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">
                       {t("admin.sentAt")}
                     </p>
-                    <p dir="ltr">
+                    <p dir="ltr" className="text-sm">
                       {new Date(selectedNotif.created_at).toLocaleString()}
                     </p>
                   </div>
@@ -1519,7 +1458,7 @@ export default function NotificationsPage() {
                   setDeleteDialogOpen(true);
                 }}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4 me-1.5" />
                 {t("admin.delete")}
               </Button>
             </DialogFooter>
@@ -1549,7 +1488,7 @@ export default function NotificationsPage() {
                   handleDelete();
                 }
               }}>
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4 me-1.5" />
                 {t("admin.delete")}
               </Button>
             </DialogFooter>

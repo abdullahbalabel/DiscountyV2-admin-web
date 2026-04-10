@@ -17,8 +17,11 @@ interface AuthContextType {
   session: Session | null;
   isAdmin: boolean;
   loading: boolean;
+  isPasswordRecovery: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,8 +29,11 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   isAdmin: false,
   loading: true,
+  isPasswordRecovery: false,
   signIn: async () => ({ error: null }),
   signOut: async () => {},
+  forgotPassword: async () => ({ error: null }),
+  updatePassword: async () => ({ error: null }),
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -35,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const mountedRef = useRef(true);
 
   const checkAdminRole = useCallback(async (userId: string) => {
@@ -84,8 +91,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mountedRef.current) return;
+
+      if (event === "PASSWORD_RECOVERY") {
+        setIsPasswordRecovery(true);
+        if (window.location.pathname !== "/reset-password") {
+          window.location.href = "/reset-password";
+          return;
+        }
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -129,9 +145,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = "/login";
   };
 
+  const forgotPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) return { error: error.message };
+    return { error: null };
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    if (error) return { error: error.message };
+    setIsPasswordRecovery(false);
+    return { error: null };
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, session, isAdmin, loading, signIn, signOut }}
+      value={{
+        user,
+        session,
+        isAdmin,
+        loading,
+        isPasswordRecovery,
+        signIn,
+        signOut,
+        forgotPassword,
+        updatePassword,
+      }}
     >
       {children}
     </AuthContext.Provider>
