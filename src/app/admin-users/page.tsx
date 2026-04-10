@@ -233,13 +233,31 @@ export default function AdminUsersPage() {
 
   // ── Admin CRUD ──
   const invokeAdminFn = async (body: Record<string, unknown>) => {
-    const { data, error } = await supabase.functions.invoke("manage-admin", { body });
-    if (error) {
-      const msg = (data as Record<string, unknown>)?.error as string | undefined;
-      throw new Error(msg || error.message);
+    const { data: refreshed } = await supabase.auth.refreshSession();
+    const accessToken = refreshed?.session?.access_token;
+    if (!accessToken) {
+      throw new Error("Session expired. Please sign in again.");
     }
-    if (data && (data as Record<string, unknown>).error) {
-      throw new Error((data as Record<string, unknown>).error as string);
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/manage-admin`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error || `Request failed (${res.status})`);
+    }
+    if (data?.error) {
+      throw new Error(data.error);
     }
     return data;
   };
