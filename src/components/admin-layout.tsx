@@ -20,6 +20,7 @@ import {
   Moon,
   Sun,
   X,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -47,6 +48,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/categories", icon: FolderOpen, label: t("admin.categories") },
     { href: "/reviews", icon: Star, label: t("admin.reviews") },
     { href: "/notifications", icon: Bell, label: t("admin.notifications") },
+    { href: "/admin-users", icon: ShieldCheck, label: t("admin.adminUsers") },
   ];
 
   const toggleLanguage = () => {

@@ -97,9 +97,43 @@ export const providerEditSchema = z.object({
   approval_status: z.enum(["pending", "approved", "rejected"]),
 });
 
+export const adminUserSchema = z.object({
+  email: z.string().email("Invalid email address").trim().toLowerCase(),
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .optional()
+    .or(z.literal("")),
+  full_name: z
+    .string()
+    .max(200, "Name must be less than 200 characters")
+    .trim()
+    .optional()
+    .or(z.literal("")),
+  role_id: z.string().min(1, "Role is required"),
+  is_active: z.boolean(),
+});
+
+export const adminGroupSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Group name is required")
+    .max(100, "Name must be less than 100 characters")
+    .trim(),
+  description: z
+    .string()
+    .max(500, "Description must be less than 500 characters")
+    .trim()
+    .optional()
+    .or(z.literal("")),
+  role_id: z.string().min(1, "Role is required"),
+});
+
 export type DealInput = z.infer<typeof dealSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type NotificationInput = z.infer<typeof notificationSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CustomerEditInput = z.infer<typeof customerEditSchema>;
 export type ProviderEditInput = z.infer<typeof providerEditSchema>;
+export type AdminUserInput = z.infer<typeof adminUserSchema>;
+export type AdminGroupInput = z.infer<typeof adminGroupSchema>;

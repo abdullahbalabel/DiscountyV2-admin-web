@@ -11,11 +11,13 @@ import {
 } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import type { AdminRoleName } from "@/lib/types";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   isAdmin: boolean;
+  adminRole: AdminRoleName | null;
   loading: boolean;
   isPasswordRecovery: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   isAdmin: false,
+  adminRole: null,
   loading: true,
   isPasswordRecovery: false,
   signIn: async () => ({ error: null }),
@@ -40,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminRole, setAdminRole] = useState<AdminRoleName | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const mountedRef = useRef(true);
@@ -54,12 +58,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error || !data || data.role !== "admin") {
         setIsAdmin(false);
+        setAdminRole(null);
         return false;
       }
       setIsAdmin(true);
+
+      // Fetch admin profile to get role level
+      const { data: profile } = await supabase
+        .from("admin_profiles")
+        .select("role_id, admin_roles(name)")
+        .eq("user_id", userId)
+        .single();
+
+      if (profile?.admin_roles) {
+        const roleData = Array.isArray(profile.admin_roles)
+          ? profile.admin_roles[0]
+          : profile.admin_roles;
+        setAdminRole((roleData?.name as AdminRoleName) || "admin");
+      } else {
+        setAdminRole("admin");
+      }
       return true;
     } catch {
       setIsAdmin(false);
+      setAdminRole(null);
       return false;
     }
   }, []);
@@ -142,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setIsAdmin(false);
+    setAdminRole(null);
     window.location.href = "/login";
   };
 
@@ -168,6 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         isAdmin,
+        adminRole,
         loading,
         isPasswordRecovery,
         signIn,

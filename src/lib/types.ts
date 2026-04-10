@@ -112,3 +112,74 @@ export interface Notification {
   is_read: boolean;
   created_at: string;
 }
+
+// ============================================================
+// Admin Management Types
+// ============================================================
+
+export type AdminRoleName = "super_admin" | "admin" | "moderator";
+export type PermissionAction = "view" | "create" | "edit" | "delete" | "manage";
+export type PermissionResource =
+  | "providers"
+  | "deals"
+  | "customers"
+  | "categories"
+  | "reviews"
+  | "notifications"
+  | "admin_users"
+  | "groups";
+
+export interface AdminRole {
+  id: string;
+  name: AdminRoleName;
+  description: string | null;
+  is_default: boolean;
+  created_at: string;
+}
+
+export interface AdminProfile {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role_id: string;
+  is_active: boolean;
+  last_login_at: string | null;
+  created_at: string;
+  updated_at: string;
+  role?: AdminRole;
+}
+
+export interface AdminGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  role_id: string;
+  created_at: string;
+  updated_at: string;
+  role?: AdminRole;
+  member_count?: number;
+}
+
+export interface AdminGroupMember {
+  id: string;
+  group_id: string;
+  admin_profile_id: string;
+  created_at: string;
+  admin_profile?: AdminProfile;
+  group?: AdminGroup;
+}
+
+export interface AdminPermission {
+  id: string;
+  role_id: string;
+  resource: PermissionResource;
+  action: PermissionAction;
+  created_at: string;
+}
+
+export interface AdminProfileWithDetails extends AdminProfile {
+  email?: string;
+  groups?: AdminGroup[];
+  permissions?: AdminPermission[];
+}
