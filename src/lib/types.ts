@@ -117,7 +117,7 @@ export interface Notification {
 // Admin Management Types
 // ============================================================
 
-export type AdminRoleName = "super_admin" | "admin" | "moderator";
+export type AdminRoleName = "super_admin" | "admin" | "moderator" | "customer_support";
 export type PermissionAction = "view" | "create" | "edit" | "delete" | "manage";
 export type PermissionResource =
   | "providers"
@@ -127,7 +127,9 @@ export type PermissionResource =
   | "reviews"
   | "notifications"
   | "admin_users"
-  | "groups";
+  | "groups"
+  | "deal_conditions"
+  | "reports";
 
 export interface AdminRole {
   id: string;
@@ -182,4 +184,39 @@ export interface AdminProfileWithDetails extends AdminProfile {
   email?: string;
   groups?: AdminGroup[];
   permissions?: AdminPermission[];
+}
+
+export interface DealCondition {
+  id: string;
+  name: string;
+  name_ar: string;
+  icon: string;
+  category: 'time' | 'quantity' | 'scope' | 'payment' | 'other';
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface RejectionReport {
+  id: string;
+  deal_id: string;
+  customer_id: string;
+  redemption_id: string;
+  reason_type: 'cashier_unaware' | 'deal_expired' | 'terms_changed' | 'technical_issue' | 'other';
+  reason_detail: string | null;
+  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed' | 'auto_hidden';
+  admin_notes: string | null;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+export interface DataRequest {
+  id: string;
+  user_id: string;
+  request_type: 'export' | 'delete';
+  status: 'pending' | 'processing' | 'completed' | 'rejected';
+  data_payload: Record<string, unknown> | null;
+  requested_at: string;
+  completed_at: string | null;
+  admin_notes: string | null;
+  expires_at: string | null;
 }

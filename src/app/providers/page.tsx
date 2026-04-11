@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -63,6 +64,15 @@ export default function ProvidersPage() {
     phone: "",
     website: "",
     approval_status: "pending" as ApprovalStatus,
+    logo_url: "",
+    cover_photo_url: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
+    social_instagram: "",
+    social_facebook: "",
+    social_tiktok: "",
+    social_x: "",
+    social_snapchat: "",
   });
   const [pendingAction, setPendingAction] = useState<{ id: string; status: ApprovalStatus; action?: "suspend" | "reactivate" } | null>(null);
   const { page, pageSize, offset, nextPage, prevPage } = usePagination();
@@ -160,6 +170,7 @@ export default function ProvidersPage() {
 
   const openEditDialog = (provider: ProviderProfile) => {
     setSelectedProvider(provider);
+    const sl = provider.social_links || {};
     setEditFormData({
       business_name: provider.business_name,
       category: provider.category,
@@ -167,6 +178,15 @@ export default function ProvidersPage() {
       phone: provider.phone || "",
       website: provider.website || "",
       approval_status: provider.approval_status,
+      logo_url: provider.logo_url || "",
+      cover_photo_url: provider.cover_photo_url || "",
+      latitude: provider.latitude,
+      longitude: provider.longitude,
+      social_instagram: sl.instagram || "",
+      social_facebook: sl.facebook || "",
+      social_tiktok: sl.tiktok || "",
+      social_x: sl.x || "",
+      social_snapchat: sl.snapchat || "",
     });
     setEditDialogOpen(true);
   };
@@ -181,6 +201,13 @@ export default function ProvidersPage() {
       return;
     }
 
+    const social_links: Record<string, string> = {};
+    if (result.data.social_instagram) social_links.instagram = result.data.social_instagram;
+    if (result.data.social_facebook) social_links.facebook = result.data.social_facebook;
+    if (result.data.social_tiktok) social_links.tiktok = result.data.social_tiktok;
+    if (result.data.social_x) social_links.x = result.data.social_x;
+    if (result.data.social_snapchat) social_links.snapchat = result.data.social_snapchat;
+
     const { error } = await supabase
       .from("provider_profiles")
       .update({
@@ -190,6 +217,11 @@ export default function ProvidersPage() {
         phone: result.data.phone || null,
         website: result.data.website || null,
         approval_status: result.data.approval_status,
+        logo_url: result.data.logo_url || null,
+        cover_photo_url: result.data.cover_photo_url || null,
+        latitude: result.data.latitude ?? null,
+        longitude: result.data.longitude ?? null,
+        social_links: Object.keys(social_links).length > 0 ? social_links : null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", selectedProvider.id);
@@ -422,54 +454,146 @@ export default function ProvidersPage() {
               <DialogTitle>{t("admin.providerDetails")}</DialogTitle>
             </DialogHeader>
             {selectedProvider && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-0.5">
-                  <span className="text-xs text-muted-foreground">
-                    {t("admin.businessName")}
-                  </span>
-                  <p className="text-sm font-medium">
-                    {selectedProvider.business_name}
-                  </p>
+              <div className="space-y-5 max-h-[60vh] overflow-y-auto pe-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-0.5">
+                    <span className="text-xs text-muted-foreground">
+                      {t("admin.businessName")}
+                    </span>
+                    <p className="text-sm font-medium">
+                      {selectedProvider.business_name}
+                    </p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="text-xs text-muted-foreground">
+                      {t("admin.category")}
+                    </span>
+                    <p className="text-sm">{selectedProvider.category}</p>
+                  </div>
+                  <div className="space-y-0.5 col-span-2">
+                    <span className="text-xs text-muted-foreground">
+                      {t("admin.description")}
+                    </span>
+                    <p className="text-sm">{selectedProvider.description || "—"}</p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="text-xs text-muted-foreground">
+                      {t("admin.phone")}
+                    </span>
+                    <p className="text-sm" dir="ltr">{selectedProvider.phone || "—"}</p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="text-xs text-muted-foreground">
+                      {t("admin.website")}
+                    </span>
+                    <p className="text-sm" dir="ltr">{selectedProvider.website || "—"}</p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="text-xs text-muted-foreground">
+                      {t("admin.rating")}
+                    </span>
+                    <p className="text-sm">
+                      {selectedProvider.average_rating?.toFixed(1)} (
+                      {selectedProvider.total_reviews} {t("admin.totalReviews")})
+                    </p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="text-xs text-muted-foreground">
+                      {t("admin.approvalStatus")}
+                    </span>
+                    <div>{getStatusBadge(selectedProvider.approval_status)}</div>
+                  </div>
                 </div>
-                <div className="space-y-0.5">
-                  <span className="text-xs text-muted-foreground">
-                    {t("admin.category")}
-                  </span>
-                  <p className="text-sm">{selectedProvider.category}</p>
-                </div>
-                <div className="space-y-0.5 col-span-2">
-                  <span className="text-xs text-muted-foreground">
-                    {t("admin.description")}
-                  </span>
-                  <p className="text-sm">{selectedProvider.description || "—"}</p>
-                </div>
-                <div className="space-y-0.5">
-                  <span className="text-xs text-muted-foreground">
-                    {t("admin.phone")}
-                  </span>
-                  <p className="text-sm" dir="ltr">{selectedProvider.phone || "—"}</p>
-                </div>
-                <div className="space-y-0.5">
-                  <span className="text-xs text-muted-foreground">
-                    {t("admin.website")}
-                  </span>
-                  <p className="text-sm" dir="ltr">{selectedProvider.website || "—"}</p>
-                </div>
-                <div className="space-y-0.5">
-                  <span className="text-xs text-muted-foreground">
-                    {t("admin.rating")}
-                  </span>
-                  <p className="text-sm">
-                    {selectedProvider.average_rating?.toFixed(1)} (
-                    {selectedProvider.total_reviews} {t("admin.totalReviews")})
-                  </p>
-                </div>
-                <div className="space-y-0.5">
-                  <span className="text-xs text-muted-foreground">
-                    {t("admin.approvalStatus")}
-                  </span>
-                  <div>{getStatusBadge(selectedProvider.approval_status)}</div>
-                </div>
+
+                {(selectedProvider.logo_url || selectedProvider.cover_photo_url) && (
+                  <div className="border-t pt-4">
+                    <p className="text-xs text-muted-foreground mb-2">{t("admin.logo")} / {t("admin.coverPhoto")}</p>
+                    <div className="flex gap-3">
+                      {selectedProvider.logo_url && (
+                        <div className="space-y-1">
+                          <img src={selectedProvider.logo_url} alt="Logo" className="h-16 w-16 rounded-lg object-cover border" />
+                          <p className="text-[10px] text-muted-foreground text-center">{t("admin.logo")}</p>
+                        </div>
+                      )}
+                      {selectedProvider.cover_photo_url && (
+                        <div className="space-y-1 flex-1">
+                          <img src={selectedProvider.cover_photo_url} alt="Cover" className="h-16 w-full rounded-lg object-cover border" />
+                          <p className="text-[10px] text-muted-foreground text-center">{t("admin.coverPhoto")}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {selectedProvider.social_links && Object.values(selectedProvider.social_links).some(Boolean) && (
+                  <div className="border-t pt-4">
+                    <p className="text-xs text-muted-foreground mb-2">{t("admin.socialLinks")}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProvider.social_links.instagram && (
+                        <a href={selectedProvider.social_links.instagram} target="_blank" rel="noopener noreferrer">
+                          <Badge variant="outline" className="cursor-pointer hover:bg-accent">Instagram</Badge>
+                        </a>
+                      )}
+                      {selectedProvider.social_links.facebook && (
+                        <a href={selectedProvider.social_links.facebook} target="_blank" rel="noopener noreferrer">
+                          <Badge variant="outline" className="cursor-pointer hover:bg-accent">Facebook</Badge>
+                        </a>
+                      )}
+                      {selectedProvider.social_links.tiktok && (
+                        <a href={selectedProvider.social_links.tiktok} target="_blank" rel="noopener noreferrer">
+                          <Badge variant="outline" className="cursor-pointer hover:bg-accent">TikTok</Badge>
+                        </a>
+                      )}
+                      {selectedProvider.social_links.x && (
+                        <a href={selectedProvider.social_links.x} target="_blank" rel="noopener noreferrer">
+                          <Badge variant="outline" className="cursor-pointer hover:bg-accent">X</Badge>
+                        </a>
+                      )}
+                      {selectedProvider.social_links.snapchat && (
+                        <a href={selectedProvider.social_links.snapchat} target="_blank" rel="noopener noreferrer">
+                          <Badge variant="outline" className="cursor-pointer hover:bg-accent">Snapchat</Badge>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {selectedProvider.business_hours && (
+                  <div className="border-t pt-4">
+                    <p className="text-xs text-muted-foreground mb-2">{t("admin.businessHours")}</p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                      {["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].map((day) => {
+                        const dayData = selectedProvider.business_hours?.[day];
+                        const dayLabel = t(`admin.day${day.charAt(0).toUpperCase() + day.slice(1)}`);
+                        return (
+                          <div key={day} className="flex justify-between">
+                            <span className="text-muted-foreground">{dayLabel}</span>
+                            <span className="font-medium">
+                              {dayData?.closed ? t("admin.closed") : `${dayData?.open || "—"} - ${dayData?.close || "—"}`}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {selectedProvider.latitude != null && selectedProvider.longitude != null && (
+                  <div className="border-t pt-4">
+                    <p className="text-xs text-muted-foreground mb-2">{t("admin.location")}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm" dir="ltr">{selectedProvider.latitude}, {selectedProvider.longitude}</p>
+                      <a
+                        href={`https://maps.google.com/?q=${selectedProvider.latitude},${selectedProvider.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {t("admin.viewOnMap")}
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <DialogFooter>
@@ -560,77 +684,216 @@ export default function ProvidersPage() {
 
         {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>{t("admin.editProvider") || "Edit Provider"}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label>{t("admin.businessName")}</Label>
-                <Input
-                  value={editFormData.business_name}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, business_name: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("admin.category")}</Label>
-                <Input
-                  value={editFormData.category}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, category: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("admin.description")}</Label>
-                <Input
-                  value={editFormData.description}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, description: e.target.value })
-                  }
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-6 max-h-[70vh] overflow-y-auto pe-2">
+              {/* Basic Info */}
+              <div className="space-y-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.basicInfo") || "Basic Info"}</p>
                 <div className="space-y-1.5">
-                  <Label>{t("admin.phone")}</Label>
+                  <Label>{t("admin.businessName")}</Label>
                   <Input
-                    value={editFormData.phone}
+                    value={editFormData.business_name}
                     onChange={(e) =>
-                      setEditFormData({ ...editFormData, phone: e.target.value })
+                      setEditFormData({ ...editFormData, business_name: e.target.value })
                     }
-                    dir="ltr"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>{t("admin.website")}</Label>
+                  <Label>{t("admin.category")}</Label>
                   <Input
-                    value={editFormData.website}
+                    value={editFormData.category}
                     onChange={(e) =>
-                      setEditFormData({ ...editFormData, website: e.target.value })
+                      setEditFormData({ ...editFormData, category: e.target.value })
                     }
-                    dir="ltr"
                   />
                 </div>
+                <div className="space-y-1.5">
+                  <Label>{t("admin.description")}</Label>
+                  <Textarea
+                    value={editFormData.description}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, description: e.target.value })
+                    }
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>{t("admin.phone")}</Label>
+                    <Input
+                      value={editFormData.phone}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, phone: e.target.value })
+                      }
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("admin.website")}</Label>
+                    <Input
+                      value={editFormData.website}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, website: e.target.value })
+                      }
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("admin.approvalStatus")}</Label>
+                  <Select
+                    value={editFormData.approval_status}
+                    onValueChange={(v) =>
+                      v && setEditFormData({ ...editFormData, approval_status: v as ApprovalStatus })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">{t("admin.pending")}</SelectItem>
+                      <SelectItem value="approved">{t("admin.approved")}</SelectItem>
+                      <SelectItem value="rejected">{t("admin.suspended")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>{t("admin.approvalStatus")}</Label>
-                <Select
-                  value={editFormData.approval_status}
-                  onValueChange={(v) =>
-                    v && setEditFormData({ ...editFormData, approval_status: v as ApprovalStatus })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">{t("admin.pending")}</SelectItem>
-                    <SelectItem value="approved">{t("admin.approved")}</SelectItem>
-                    <SelectItem value="rejected">{t("admin.suspended")}</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              {/* Images */}
+              <div className="space-y-3 border-t pt-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.images") || "Images"}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>{t("admin.logo")} URL</Label>
+                    <Input
+                      value={editFormData.logo_url}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, logo_url: e.target.value })
+                      }
+                      dir="ltr"
+                      placeholder="https://..."
+                    />
+                    {editFormData.logo_url && (
+                      <img src={editFormData.logo_url} alt="Logo preview" className="h-16 w-16 rounded-lg object-cover border mt-1" />
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("admin.coverPhoto")} URL</Label>
+                    <Input
+                      value={editFormData.cover_photo_url}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, cover_photo_url: e.target.value })
+                      }
+                      dir="ltr"
+                      placeholder="https://..."
+                    />
+                    {editFormData.cover_photo_url && (
+                      <img src={editFormData.cover_photo_url} alt="Cover preview" className="h-16 w-full rounded-lg object-cover border mt-1" />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="space-y-3 border-t pt-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.location")}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>{t("admin.latitude")}</Label>
+                    <Input
+                      type="number"
+                      step="any"
+                      min={-90}
+                      max={90}
+                      value={editFormData.latitude ?? ""}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, latitude: e.target.value ? parseFloat(e.target.value) : null })
+                      }
+                      dir="ltr"
+                      placeholder="e.g. 24.7136"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("admin.longitude")}</Label>
+                    <Input
+                      type="number"
+                      step="any"
+                      min={-180}
+                      max={180}
+                      value={editFormData.longitude ?? ""}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, longitude: e.target.value ? parseFloat(e.target.value) : null })
+                      }
+                      dir="ltr"
+                      placeholder="e.g. 46.6753"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Links */}
+              <div className="space-y-3 border-t pt-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.socialLinks")}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>Instagram</Label>
+                    <Input
+                      value={editFormData.social_instagram}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, social_instagram: e.target.value })
+                      }
+                      dir="ltr"
+                      placeholder="@handle or URL"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Facebook</Label>
+                    <Input
+                      value={editFormData.social_facebook}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, social_facebook: e.target.value })
+                      }
+                      dir="ltr"
+                      placeholder="@handle or URL"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>TikTok</Label>
+                    <Input
+                      value={editFormData.social_tiktok}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, social_tiktok: e.target.value })
+                      }
+                      dir="ltr"
+                      placeholder="@handle or URL"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>X (Twitter)</Label>
+                    <Input
+                      value={editFormData.social_x}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, social_x: e.target.value })
+                      }
+                      dir="ltr"
+                      placeholder="@handle or URL"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Snapchat</Label>
+                    <Input
+                      value={editFormData.social_snapchat}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, social_snapchat: e.target.value })
+                      }
+                      dir="ltr"
+                      placeholder="@handle or URL"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             <DialogFooter>

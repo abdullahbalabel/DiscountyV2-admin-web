@@ -95,6 +95,33 @@ export const providerEditSchema = z.object({
     .optional()
     .or(z.literal("")),
   approval_status: z.enum(["pending", "approved", "rejected"]),
+  logo_url: z
+    .string()
+    .url("Must be a valid URL")
+    .optional()
+    .or(z.literal("")),
+  cover_photo_url: z
+    .string()
+    .url("Must be a valid URL")
+    .optional()
+    .or(z.literal("")),
+  latitude: z
+    .number()
+    .min(-90, "Latitude must be between -90 and 90")
+    .max(90, "Latitude must be between -90 and 90")
+    .nullable()
+    .optional(),
+  longitude: z
+    .number()
+    .min(-180, "Longitude must be between -180 and 180")
+    .max(180, "Longitude must be between -180 and 180")
+    .nullable()
+    .optional(),
+  social_instagram: z.string().max(200).optional().or(z.literal("")),
+  social_facebook: z.string().max(200).optional().or(z.literal("")),
+  social_tiktok: z.string().max(200).optional().or(z.literal("")),
+  social_x: z.string().max(200).optional().or(z.literal("")),
+  social_snapchat: z.string().max(200).optional().or(z.literal("")),
 });
 
 export const adminUserSchema = z.object({
@@ -129,6 +156,25 @@ export const adminGroupSchema = z.object({
   role_id: z.string().min(1, "Role is required"),
 });
 
+export const dealConditionSchema = z.object({
+  name: z.string().min(1).max(100),
+  name_ar: z.string().min(1).max(100),
+  icon: z.string().min(1),
+  category: z.enum(['time', 'quantity', 'scope', 'payment', 'other']),
+  is_active: z.boolean(),
+  sort_order: z.number().int().min(0),
+});
+
+export const rejectionReportReviewSchema = z.object({
+  status: z.enum(['reviewed', 'resolved', 'dismissed']),
+  admin_notes: z.string().max(500).optional(),
+});
+
+export const dataRequestReviewSchema = z.object({
+  action: z.enum(['process', 'reject']),
+  admin_notes: z.string().max(500).optional(),
+});
+
 export type DealInput = z.infer<typeof dealSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type NotificationInput = z.infer<typeof notificationSchema>;
@@ -137,3 +183,6 @@ export type CustomerEditInput = z.infer<typeof customerEditSchema>;
 export type ProviderEditInput = z.infer<typeof providerEditSchema>;
 export type AdminUserInput = z.infer<typeof adminUserSchema>;
 export type AdminGroupInput = z.infer<typeof adminGroupSchema>;
+export type DealConditionInput = z.infer<typeof dealConditionSchema>;
+export type RejectionReportReviewInput = z.infer<typeof rejectionReportReviewSchema>;
+export type DataRequestReviewInput = z.infer<typeof dataRequestReviewSchema>;

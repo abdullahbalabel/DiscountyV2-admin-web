@@ -70,6 +70,8 @@ const RESOURCES: PermissionResource[] = [
   "notifications",
   "admin_users",
   "groups",
+  "deal_conditions",
+  "reports",
 ];
 
 const ACTIONS: PermissionAction[] = ["view", "create", "edit", "delete", "manage"];
@@ -447,6 +449,15 @@ export default function AdminUsersPage() {
   const hasPermission = (resource: string, action: string) =>
     permissions.some((p) => p.resource === resource && p.action === action);
 
+  const getRoleDisplayName = (roleName: string) =>
+    roleName === "super_admin"
+      ? t("admin.superAdmin")
+      : roleName === "admin"
+      ? t("admin.adminRole")
+      : roleName === "moderator"
+      ? t("admin.moderator")
+      : t("admin.customerSupport");
+
   const getRoleBadge = (roleName?: string) => {
     switch (roleName) {
       case "super_admin":
@@ -465,6 +476,12 @@ export default function AdminUsersPage() {
         return (
           <Badge className="bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400 border-none">
             {t("admin.moderator")}
+          </Badge>
+        );
+      case "customer_support":
+        return (
+          <Badge className="bg-teal-500/10 text-teal-600 dark:bg-teal-500/15 dark:text-teal-400 border-none">
+            {t("admin.customerSupport")}
           </Badge>
         );
       default:
@@ -740,14 +757,9 @@ export default function AdminUsersPage() {
                     <Select
                       items={roles.map((role) => ({
                         value: role.id,
-                        label:
-                          role.name === "super_admin"
-                            ? t("admin.superAdmin")
-                            : role.name === "admin"
-                            ? t("admin.adminRole")
-                            : t("admin.moderator"),
+                        label: getRoleDisplayName(role.name),
                       }))}
-                      value={selectedPermRole}
+                    value={selectedPermRole}
                       onValueChange={(val) => setSelectedPermRole(val ?? "")}
                     >
                       <SelectTrigger className="w-full">
@@ -756,11 +768,7 @@ export default function AdminUsersPage() {
                       <SelectContent>
                         {roles.map((role) => (
                           <SelectItem key={role.id} value={role.id}>
-                            {role.name === "super_admin"
-                              ? t("admin.superAdmin")
-                              : role.name === "admin"
-                              ? t("admin.adminRole")
-                              : t("admin.moderator")}
+                            {getRoleDisplayName(role.name)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -798,6 +806,10 @@ export default function AdminUsersPage() {
                                 ? t("admin.adminUsers")
                                 : resource === "groups"
                                 ? t("admin.groups")
+                                : resource === "deal_conditions"
+                                ? t("admin.dealConditionsNav")
+                                : resource === "reports"
+                                ? t("admin.reportsNav")
                                 : t(`admin.${resource}`) || resource}
                             </TableCell>
                             {ACTIONS.map((action) => {
@@ -936,12 +948,7 @@ export default function AdminUsersPage() {
                 <Select
                   items={roles.map((role) => ({
                     value: role.id,
-                    label:
-                      role.name === "super_admin"
-                        ? t("admin.superAdmin")
-                        : role.name === "admin"
-                        ? t("admin.adminRole")
-                        : t("admin.moderator"),
+                    label: getRoleDisplayName(role.name),
                   }))}
                   value={adminFormData.role_id}
                   onValueChange={(val) =>
@@ -954,11 +961,7 @@ export default function AdminUsersPage() {
                   <SelectContent>
                     {roles.map((role) => (
                       <SelectItem key={role.id} value={role.id}>
-                        {role.name === "super_admin"
-                          ? t("admin.superAdmin")
-                          : role.name === "admin"
-                          ? t("admin.adminRole")
-                          : t("admin.moderator")}
+                        {getRoleDisplayName(role.name)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1059,12 +1062,7 @@ export default function AdminUsersPage() {
                       .filter((r) => r.id !== moveTargetAdmin.role_id)
                       .map((role) => ({
                         value: role.id,
-                        label:
-                          role.name === "super_admin"
-                            ? t("admin.superAdmin")
-                            : role.name === "admin"
-                            ? t("admin.adminRole")
-                            : t("admin.moderator"),
+                        label: getRoleDisplayName(role.name),
                       }))}
                     value={moveTargetRoleId}
                     onValueChange={(val) => setMoveTargetRoleId(val ?? "")}
@@ -1077,11 +1075,7 @@ export default function AdminUsersPage() {
                         .filter((r) => r.id !== moveTargetAdmin.role_id)
                         .map((role) => (
                           <SelectItem key={role.id} value={role.id}>
-                            {role.name === "super_admin"
-                              ? t("admin.superAdmin")
-                              : role.name === "admin"
-                              ? t("admin.adminRole")
-                              : t("admin.moderator")}
+                            {getRoleDisplayName(role.name)}
                           </SelectItem>
                         ))}
                     </SelectContent>

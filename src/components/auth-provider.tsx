@@ -61,14 +61,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAdminRole(null);
         return false;
       }
-      setIsAdmin(true);
 
-      // Fetch admin profile to get role level
+      // Fetch admin profile including is_active
       const { data: profile } = await supabase
         .from("admin_profiles")
-        .select("role_id, admin_roles(name)")
+        .select("role_id, is_active, admin_roles(name)")
         .eq("user_id", userId)
         .single();
+
+      if (!profile?.is_active) {
+        setIsAdmin(false);
+        setAdminRole(null);
+        return false;
+      }
+
+      setIsAdmin(true);
 
       if (profile?.admin_roles) {
         const roleData = Array.isArray(profile.admin_roles)

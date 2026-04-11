@@ -683,6 +683,18 @@ export default function NotificationsPage() {
                     <SelectItem value="review_received">
                       Review Received
                     </SelectItem>
+                    <SelectItem value="rejection_report">
+                      {t("admin.rejectionReport")}
+                    </SelectItem>
+                    <SelectItem value="report_reviewed">
+                      {t("admin.reportReviewed")}
+                    </SelectItem>
+                    <SelectItem value="report_resolved">
+                      {t("admin.reportResolved")}
+                    </SelectItem>
+                    <SelectItem value="report_dismissed">
+                      {t("admin.reportDismissed")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
