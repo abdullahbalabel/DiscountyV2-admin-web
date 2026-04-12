@@ -72,6 +72,8 @@ const RESOURCES: PermissionResource[] = [
   "groups",
   "deal_conditions",
   "reports",
+  "support_tickets",
+  "data_requests",
 ];
 
 const ACTIONS: PermissionAction[] = ["view", "create", "edit", "delete", "manage"];
@@ -755,11 +757,7 @@ export default function AdminUsersPage() {
                 <div className="flex items-center gap-4">
                   <div className="w-48">
                     <Select
-                      items={roles.map((role) => ({
-                        value: role.id,
-                        label: getRoleDisplayName(role.name),
-                      }))}
-                    value={selectedPermRole}
+                      value={selectedPermRole}
                       onValueChange={(val) => setSelectedPermRole(val ?? "")}
                     >
                       <SelectTrigger className="w-full">
@@ -810,6 +808,10 @@ export default function AdminUsersPage() {
                                 ? t("admin.dealConditionsNav")
                                 : resource === "reports"
                                 ? t("admin.reportsNav")
+                                : resource === "support_tickets"
+                                ? t("admin.supportTickets.navTitle")
+                                : resource === "data_requests"
+                                ? t("admin.dataRequests.navTitle")
                                 : t(`admin.${resource}`) || resource}
                             </TableCell>
                             {ACTIONS.map((action) => {
@@ -946,10 +948,6 @@ export default function AdminUsersPage() {
               <div className="space-y-1.5">
                 <Label>{t("admin.role")}</Label>
                 <Select
-                  items={roles.map((role) => ({
-                    value: role.id,
-                    label: getRoleDisplayName(role.name),
-                  }))}
                   value={adminFormData.role_id}
                   onValueChange={(val) =>
                     setAdminFormData({ ...adminFormData, role_id: val ?? "" })
@@ -1058,12 +1056,6 @@ export default function AdminUsersPage() {
                 <div className="space-y-1.5">
                   <Label>{t("admin.role")}</Label>
                   <Select
-                    items={roles
-                      .filter((r) => r.id !== moveTargetAdmin.role_id)
-                      .map((role) => ({
-                        value: role.id,
-                        label: getRoleDisplayName(role.name),
-                      }))}
                     value={moveTargetRoleId}
                     onValueChange={(val) => setMoveTargetRoleId(val ?? "")}
                   >

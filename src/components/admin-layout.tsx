@@ -28,18 +28,17 @@ import {
   Check,
   CheckCheck,
   ExternalLink,
-  Settings,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Shield,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
@@ -86,7 +85,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [recentNotifs, setRecentNotifs] = useState<Notification[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const isRtl = i18n.language === "ar";
 
   const toggleCollapsed = () => {
@@ -188,21 +186,39 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     }
   };
 
-  const navItems = [
-    { href: "/", icon: LayoutDashboard, label: t("admin.dashboard") },
-    { href: "/providers", icon: Store, label: t("admin.providers") },
-    { href: "/deals", icon: Tag, label: t("admin.deals") },
-    { href: "/customers", icon: Users, label: t("admin.customers") },
-    { href: "/reviews", icon: Star, label: t("admin.reviews") },
-    { href: "/reports", icon: AlertTriangle, label: t("admin.reports.navTitle") },
-    { href: "/data-requests", icon: Shield, label: t("admin.dataRequests.navTitle") },
-    { href: "/notifications", icon: Bell, label: t("admin.notifications") },
-  ];
-
-  const settingsItems = [
-    { href: "/categories", icon: FolderOpen, label: t("admin.categories") },
-    { href: "/deal-conditions", icon: ListChecks, label: t("admin.dealConditions.navTitle") },
-    { href: "/admin-users", icon: ShieldCheck, label: t("admin.adminUsers") },
+  const navGroups = [
+    {
+      label: t("admin.groupOverview"),
+      items: [
+        { href: "/", icon: LayoutDashboard, label: t("admin.dashboard") },
+      ],
+    },
+    {
+      label: t("admin.groupBusiness"),
+      items: [
+        { href: "/providers", icon: Store, label: t("admin.providers") },
+        { href: "/deals", icon: Tag, label: t("admin.deals") },
+        { href: "/categories", icon: FolderOpen, label: t("admin.categories") },
+        { href: "/customers", icon: Users, label: t("admin.customers") },
+        { href: "/reviews", icon: Star, label: t("admin.reviews") },
+      ],
+    },
+    {
+      label: t("admin.groupSupport"),
+      items: [
+        { href: "/reports", icon: AlertTriangle, label: t("admin.reports.navTitle") },
+        { href: "/support-tickets", icon: MessageSquare, label: t("admin.supportTickets.navTitle") },
+        { href: "/data-requests", icon: Shield, label: t("admin.dataRequests.navTitle") },
+        { href: "/notifications", icon: Bell, label: t("admin.notifications") },
+      ],
+    },
+    {
+      label: t("admin.groupAdmin"),
+      items: [
+        { href: "/deal-conditions", icon: ListChecks, label: t("admin.dealConditions.navTitle") },
+        { href: "/admin-users", icon: ShieldCheck, label: t("admin.adminUsers") },
+      ],
+    },
   ];
 
   const toggleLanguage = () => {
@@ -216,8 +232,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
-
-  const isSettingsActive = settingsItems.some((item) => isActive(item.href));
 
   return (
     <TooltipProvider>
@@ -274,202 +288,70 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Navigation */}
-        <nav className={`flex-1 py-4 space-y-0.5 overflow-y-auto ${
+        <nav className={`flex-1 py-4 space-y-1 overflow-y-auto scrollbar-none ${
           sidebarCollapsed ? "lg:px-2 px-3" : "px-3"
         }`}>
-          {navItems.map((item) => {
-            const active = isActive(item.href);
-            const linkContent = (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setSidebarOpen(false)}
-                className={`group flex items-center rounded-lg text-sm font-medium transition-all duration-200 relative ${
-                  sidebarCollapsed ? "lg:justify-center lg:px-0 px-3 py-2.5 gap-3" : "px-3 py-2.5 gap-3"
-                } ${
-                  active
-                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                <item.icon
-                  className={`h-[18px] w-[18px] shrink-0 transition-colors ${
-                    active
-                      ? "text-primary-foreground"
-                      : "text-muted-foreground group-hover:text-foreground"
-                  }`}
-                />
-                <span className={sidebarCollapsed ? "lg:hidden" : ""}>{item.label}</span>
-              </Link>
-            );
+          {navGroups.map((group, groupIdx) => (
+            <div key={group.label} className={groupIdx > 0 ? "mt-1" : ""}>
+              {/* Group label */}
+              {!sidebarCollapsed && (
+                <p className="px-3 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  {group.label}
+                </p>
+              )}
+              {sidebarCollapsed && groupIdx > 0 && (
+                <div className="hidden lg:flex justify-center py-2">
+                  <div className="w-5 h-px bg-border" />
+                </div>
+              )}
 
-            if (sidebarCollapsed) {
-              return (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger
-                    render={<div />}
-                    className="hidden lg:block"
-                  >
-                    {linkContent}
-                  </TooltipTrigger>
-                  <TooltipContent side={isRtl ? "left" : "right"} sideOffset={8}>
-                    {item.label}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-
-            return linkContent;
-          })}
-
-          {/* Settings group */}
-          {sidebarCollapsed ? (
-            <Tooltip>
-              <TooltipTrigger
-                render={<div />}
-                className="hidden lg:block"
-              >
-                <Link
-                  href="/categories"
-                  onClick={() => setSidebarOpen(false)}
-                  className={`group flex items-center rounded-lg text-sm font-medium transition-all duration-200 relative lg:justify-center lg:px-0 px-3 py-2.5 gap-3 ${
-                    isSettingsActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  <Settings
-                    className={`h-[18px] w-[18px] shrink-0 transition-colors ${
-                      isSettingsActive
-                        ? "text-primary"
-                        : "text-muted-foreground group-hover:text-foreground"
+              {group.items.map((item) => {
+                const active = isActive(item.href);
+                const linkContent = (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`group flex items-center rounded-lg text-sm font-medium transition-all duration-200 relative ${
+                      sidebarCollapsed ? "lg:justify-center lg:px-0 px-3 py-2.5 gap-3" : "px-3 py-2.5 gap-3"
+                    } ${
+                      active
+                        ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`}
-                  />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side={isRtl ? "left" : "right"} sideOffset={8}>
-                {t("admin.settings")}
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => setSettingsOpen((prev) => !prev)}
-                className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 w-full ${
-                  isSettingsActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                <Settings
-                  className={`h-[18px] w-[18px] shrink-0 transition-colors ${
-                    isSettingsActive
-                      ? "text-primary"
-                      : "text-muted-foreground group-hover:text-foreground"
-                  }`}
-                />
-                <span className="flex-1 text-start">{t("admin.settings")}</span>
-                <ChevronDown
-                  className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-                    settingsOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-              {settingsOpen && (
-                <div className="ms-3 space-y-0.5 animate-fade-in">
-                  {settingsItems.map((item) => {
-                    const active = isActive(item.href);
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setSidebarOpen(false)}
-                        className={`group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
-                          active
-                            ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20 font-medium"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                        }`}
+                  >
+                    <item.icon
+                      className={`h-[18px] w-[18px] shrink-0 transition-colors ${
+                        active
+                          ? "text-primary-foreground"
+                          : "text-muted-foreground group-hover:text-foreground"
+                      }`}
+                    />
+                    <span className={sidebarCollapsed ? "lg:hidden" : ""}>{item.label}</span>
+                  </Link>
+                );
+
+                if (sidebarCollapsed) {
+                  return (
+                    <Tooltip key={item.href}>
+                      <TooltipTrigger
+                        render={<div />}
+                        className="hidden lg:block"
                       >
-                        <item.icon
-                          className={`h-[16px] w-[16px] shrink-0 transition-colors ${
-                            active
-                              ? "text-primary-foreground"
-                              : "text-muted-foreground group-hover:text-foreground"
-                          }`}
-                        />
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          )}
+                        {linkContent}
+                      </TooltipTrigger>
+                      <TooltipContent side={isRtl ? "left" : "right"} sideOffset={8}>
+                        {item.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return linkContent;
+              })}
+            </div>
+          ))}
         </nav>
-
-        <Separator className="opacity-50" />
-
-        {/* User section */}
-        <div className={`space-y-2 ${sidebarCollapsed ? "lg:p-2 p-4" : "p-4"}`}>
-          {user && (
-            <Tooltip>
-              <TooltipTrigger
-                render={<div />}
-                className={sidebarCollapsed ? "hidden lg:block" : ""}
-              >
-                <div className={`flex items-center rounded-lg bg-muted/50 ${
-                  sidebarCollapsed ? "lg:justify-center lg:px-0 lg:py-2 px-3 py-2 gap-3" : "px-3 py-2 gap-3"
-                }`}>
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase shrink-0">
-                    {user.email?.charAt(0) || "A"}
-                  </div>
-                  <div className={`flex-1 min-w-0 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-                    <p className="text-xs font-medium text-foreground truncate">
-                      {user.email}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {t("admin.title")}
-                    </p>
-                  </div>
-                </div>
-              </TooltipTrigger>
-              {sidebarCollapsed && (
-                <TooltipContent side={isRtl ? "left" : "right"} sideOffset={8}>
-                  {user.email}
-                </TooltipContent>
-              )}
-            </Tooltip>
-          )}
-          {sidebarCollapsed ? (
-            <Tooltip>
-              <TooltipTrigger
-                render={<div />}
-                className="hidden lg:block"
-              >
-                <Button
-                  variant="ghost"
-                  className="w-full justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                  onClick={signOut}
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side={isRtl ? "left" : "right"} sideOffset={8}>
-                {t("admin.logout")}
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-              onClick={signOut}
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="text-sm">{t("admin.logout")}</span>
-            </Button>
-          )}
-        </div>
 
         {/* Collapse toggle - desktop only */}
         <div className="hidden lg:block border-t border-border/60">
@@ -513,6 +395,29 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </Button>
 
           <div className="flex items-center gap-1.5 ms-auto">
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-lg hover:bg-muted transition-colors h-8 w-8">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase">
+                    {user.email?.charAt(0) || "A"}
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={8} className="w-56">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium text-foreground truncate">{user.email}</p>
+                    <p className="text-xs text-muted-foreground">{t("admin.title")}</p>
+                  </div>
+                  <DropdownMenuItem
+                    onClick={signOut}
+                    className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {t("admin.logout")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
               <DropdownMenuTrigger
                 className="relative inline-flex items-center justify-center rounded-lg hover:bg-muted transition-colors h-8 w-8"

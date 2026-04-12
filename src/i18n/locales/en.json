@@ -9,6 +9,10 @@
     "reviews": "Reviews",
     "notifications": "Notifications",
     "settings": "Settings",
+    "groupOverview": "Overview",
+    "groupBusiness": "Business",
+    "groupSupport": "Support",
+    "groupAdmin": "Administration",
     "collapseSidebar": "Collapse sidebar",
     "expandSidebar": "Expand sidebar",
     "markAllRead": "Mark all read",
@@ -369,6 +373,28 @@
       "all": "All",
       "processed": "Request processed successfully",
       "rejectedSuccess": "Request rejected successfully"
+    },
+    "supportTickets": {
+      "navTitle": "Support Tickets",
+      "title": "Support Tickets",
+      "subject": "Subject",
+      "message": "Message",
+      "status": "Status",
+      "provider": "Provider",
+      "createdAt": "Created",
+      "reply": "Reply",
+      "replyPlaceholder": "Type your reply...",
+      "sendReply": "Send Reply",
+      "open": "Open",
+      "replied": "Replied",
+      "closed": "Closed",
+      "all": "All",
+      "noTickets": "No support tickets found",
+      "replySent": "Reply sent successfully",
+      "closeTicket": "Close Ticket",
+      "ticketClosed": "Ticket closed successfully",
+      "conversation": "Conversation",
+      "adminYou": "You (Admin)"
     }
   }
 }

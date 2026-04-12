@@ -9,6 +9,10 @@
     "reviews": "التقييمات",
     "notifications": "الإشعارات",
     "settings": "الإعدادات",
+    "groupOverview": "نظرة عامة",
+    "groupBusiness": "الأعمال",
+    "groupSupport": "الدعم",
+    "groupAdmin": "الإدارة",
     "collapseSidebar": "طي الشريط الجانبي",
     "expandSidebar": "توسيع الشريط الجانبي",
     "markAllRead": "تعيين الكل كمقروء",
@@ -369,6 +373,28 @@
       "all": "الكل",
       "processed": "تمت معالجة الطلب بنجاح",
       "rejectedSuccess": "تم رفض الطلب بنجاح"
+    },
+    "supportTickets": {
+      "navTitle": "تذاكر الدعم",
+      "title": "تذاكر الدعم",
+      "subject": "الموضوع",
+      "message": "الرسالة",
+      "status": "الحالة",
+      "provider": "المزود",
+      "createdAt": "تاريخ الإنشاء",
+      "reply": "الرد",
+      "replyPlaceholder": "اكتب ردك...",
+      "sendReply": "إرسال الرد",
+      "open": "مفتوحة",
+      "replied": "تم الرد",
+      "closed": "مغلقة",
+      "all": "الكل",
+      "noTickets": "لا توجد تذاكر دعم",
+      "replySent": "تم إرسال الرد بنجاح",
+      "closeTicket": "إغلاق التذكرة",
+      "ticketClosed": "تم إغلاق التذكرة بنجاح",
+      "conversation": "المحادثة",
+      "adminYou": "أنت (الإدارة)"
     }
   }
 }

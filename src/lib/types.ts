@@ -16,7 +16,7 @@ export interface ProviderProfile {
   phone: string | null;
   website: string | null;
   social_links: Record<string, string> | null;
-  business_hours: Record<string, { open: string; close: string; closed: boolean }> | null;
+  business_hours: Record<string, string> | null;
   average_rating: number;
   total_reviews: number;
   latitude: number | null;
@@ -129,7 +129,9 @@ export type PermissionResource =
   | "admin_users"
   | "groups"
   | "deal_conditions"
-  | "reports";
+  | "reports"
+  | "support_tickets"
+  | "data_requests";
 
 export interface AdminRole {
   id: string;
@@ -219,4 +221,27 @@ export interface DataRequest {
   completed_at: string | null;
   admin_notes: string | null;
   expires_at: string | null;
+}
+
+export interface SupportTicket {
+  id: string;
+  provider_id: string;
+  subject: string;
+  message: string;
+  status: 'open' | 'replied' | 'closed';
+  admin_reply: string | null;
+  replied_by: string | null;
+  replied_at: string | null;
+  created_at: string;
+  updated_at: string;
+  provider?: { business_name: string };
+}
+
+export interface TicketMessage {
+  id: string;
+  ticket_id: string;
+  sender_id: string;
+  sender_role: 'provider' | 'admin';
+  message: string;
+  created_at: string;
 }

@@ -449,7 +449,7 @@ export default function ProvidersPage() {
 
         {/* View Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>{t("admin.providerDetails")}</DialogTitle>
             </DialogHeader>
@@ -563,14 +563,25 @@ export default function ProvidersPage() {
                     <p className="text-xs text-muted-foreground mb-2">{t("admin.businessHours")}</p>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                       {["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].map((day) => {
-                        const dayData = selectedProvider.business_hours?.[day];
+                        const raw = selectedProvider.business_hours?.[day];
                         const dayLabel = t(`admin.day${day.charAt(0).toUpperCase() + day.slice(1)}`);
+                        let display = "—";
+                        if (raw === "closed") {
+                          display = t("admin.closed");
+                        } else if (typeof raw === "string" && raw.includes("-")) {
+                          const [o, c] = raw.split("-");
+                          const to12h = (t: string) => {
+                            const [h, m] = t.split(":").map(Number);
+                            const period = h >= 12 ? "PM" : "AM";
+                            const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                            return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+                          };
+                          display = `${to12h(o)} - ${to12h(c)}`;
+                        }
                         return (
                           <div key={day} className="flex justify-between">
                             <span className="text-muted-foreground">{dayLabel}</span>
-                            <span className="font-medium">
-                              {dayData?.closed ? t("admin.closed") : `${dayData?.open || "—"} - ${dayData?.close || "—"}`}
-                            </span>
+                            <span className="font-medium">{display}</span>
                           </div>
                         );
                       })}
@@ -684,7 +695,7 @@ export default function ProvidersPage() {
 
         {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
               <DialogTitle>{t("admin.editProvider") || "Edit Provider"}</DialogTitle>
             </DialogHeader>
