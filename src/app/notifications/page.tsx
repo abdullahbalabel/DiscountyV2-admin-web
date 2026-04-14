@@ -263,8 +263,8 @@ export default function NotificationsPage() {
       const broadcastGroups = new Map<string, Notification[]>();
 
       for (const notif of filtered) {
-        if (notif.type === "admin_broadcast") {
-          const key = `${notif.title}||${notif.body}`;
+        if (notif.type === "admin_broadcast" || notif.type === "provider_broadcast") {
+          const key = `${notif.type}||${notif.title}||${notif.body}`;
           const group = broadcastGroups.get(key);
           if (group) {
             group.push(notif);
@@ -283,10 +283,10 @@ export default function NotificationsPage() {
         );
         result.push({
           isGroup: true,
-          groupId: `${sorted[0].title}||${sorted[0].body}`,
+          groupId: `${sorted[0].type}||${sorted[0].title}||${sorted[0].body}`,
           title: sorted[0].title,
           body: sorted[0].body,
-          type: "admin_broadcast",
+          type: sorted[0].type,
           count: group.length,
           firstCreated: sorted[0].created_at,
           sampleNotif: sorted[0],
@@ -443,7 +443,7 @@ export default function NotificationsPage() {
     const { data } = await supabase
       .from("notifications")
       .select("user_id, is_read")
-      .eq("type", "admin_broadcast")
+      .in("type", ["admin_broadcast", "provider_broadcast"])
       .eq("title", group.title)
       .eq("body", group.body);
 
@@ -511,7 +511,7 @@ export default function NotificationsPage() {
     const { error } = await supabase
       .from("notifications")
       .delete()
-      .eq("type", "admin_broadcast")
+      .in("type", ["admin_broadcast", "provider_broadcast"])
       .eq("title", group.title)
       .eq("body", group.body);
 
@@ -529,6 +529,7 @@ export default function NotificationsPage() {
   const getTypeBadge = (type: string) => {
     const styles: Record<string, string> = {
       admin_broadcast: "bg-primary/10 text-primary border-none",
+      provider_broadcast: "bg-teal-500/10 text-teal-600 dark:bg-teal-500/15 dark:text-teal-400 border-none",
       admin_message: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400 border-none",
       deal_redeemed: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border-none",
       new_deal: "bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400 border-none",
@@ -538,6 +539,7 @@ export default function NotificationsPage() {
     };
     const labels: Record<string, string> = {
       admin_broadcast: t("admin.adminBroadcast"),
+      provider_broadcast: t("admin.providerBroadcast"),
       admin_message: t("admin.adminMessage"),
       deal_redeemed: "Deal Redeemed",
       new_deal: "New Deal",
@@ -670,6 +672,9 @@ export default function NotificationsPage() {
                     <SelectItem value="all">{t("admin.all")}</SelectItem>
                     <SelectItem value="admin_broadcast">
                       {t("admin.adminBroadcast")}
+                    </SelectItem>
+                    <SelectItem value="provider_broadcast">
+                      {t("admin.providerBroadcast")}
                     </SelectItem>
                     <SelectItem value="admin_message">
                       {t("admin.adminMessage")}

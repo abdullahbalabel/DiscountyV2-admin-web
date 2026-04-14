@@ -7,7 +7,7 @@ import { AdminPageWrapper } from "@/components/admin-page-wrapper";
 import { supabase } from "@/lib/supabase";
 import { useDebounce } from "@/hooks/use-debounce";
 import { usePagination } from "@/hooks/use-pagination";
-import { ProviderProfile, ApprovalStatus } from "@/lib/types";
+import { ProviderProfile, ApprovalStatus, SubscriptionPlan } from "@/lib/types";
 import { providerEditSchema } from "@/lib/validations";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Check, X, Eye, Search, Trash2, Pause, Play, Pencil, Store } from "lucide-react";
+import { Check, X, Eye, Search, Trash2, Pause, Play, Pencil, Store, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ProvidersPage() {
@@ -75,6 +75,7 @@ export default function ProvidersPage() {
     social_snapchat: "",
   });
   const [pendingAction, setPendingAction] = useState<{ id: string; status: ApprovalStatus; action?: "suspend" | "reactivate" } | null>(null);
+  const [providerSubs, setProviderSubs] = useState<Map<string, { plan_name: string; status: string; billing_cycle: string; current_period_end: string; plan: SubscriptionPlan | null }>>(new Map());
   const { page, pageSize, offset, nextPage, prevPage } = usePagination();
 
   const fetchProviders = useCallback(async () => {
@@ -103,6 +104,34 @@ export default function ProvidersPage() {
         );
       }
       setProviders(filtered);
+
+      // Fetch active subscriptions for visible providers
+      const providerIds = filtered.map((p) => p.id);
+      if (providerIds.length > 0) {
+        const { data: subsData } = await supabase
+          .from("provider_subscriptions")
+          .select("provider_id, status, billing_cycle, current_period_end, plan:subscription_plans!plan_id(name, id)")
+          .in("provider_id", providerIds)
+          .eq("status", "active");
+
+        if (subsData) {
+          const subsMap = new Map<string, { plan_name: string; status: string; billing_cycle: string; current_period_end: string; plan: SubscriptionPlan | null }>();
+          for (const sub of subsData as unknown as Array<{ provider_id: string; status: string; billing_cycle: string; current_period_end: string; plan: SubscriptionPlan | null }>) {
+            // Normalize: plan join may return as array or object
+            const plan = Array.isArray(sub.plan) ? sub.plan[0] : sub.plan;
+            if (!subsMap.has(sub.provider_id)) {
+              subsMap.set(sub.provider_id, {
+                plan_name: plan?.name || "—",
+                status: sub.status,
+                billing_cycle: sub.billing_cycle,
+                current_period_end: sub.current_period_end,
+                plan: plan ?? null,
+              });
+            }
+          }
+          setProviderSubs(subsMap);
+        }
+      }
     }
     setLoading(false);
   }, [statusFilter, debouncedSearch, offset, pageSize]);
@@ -297,6 +326,7 @@ export default function ProvidersPage() {
                       <TableHead>{t("admin.category")}</TableHead>
                       <TableHead>{t("admin.phone")}</TableHead>
                       <TableHead>{t("admin.rating")}</TableHead>
+                      <TableHead>{t("admin.plan")}</TableHead>
                       <TableHead>{t("admin.approvalStatus")}</TableHead>
                       <TableHead>{t("admin.createdAt")}</TableHead>
                       <TableHead className="text-end">{t("admin.actions")}</TableHead>
@@ -319,6 +349,21 @@ export default function ProvidersPage() {
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {provider.average_rating?.toFixed(1) || "—"}
+                        </TableCell>
+                        <TableCell>
+                          {providerSubs.has(provider.id) ? (
+                            <Badge
+                              className={
+                                providerSubs.get(provider.id)!.status === "active"
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border-none"
+                                  : "bg-muted text-muted-foreground border-none"
+                              }
+                            >
+                              {providerSubs.get(provider.id)!.plan_name}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(provider.approval_status)}
@@ -602,6 +647,63 @@ export default function ProvidersPage() {
                       >
                         {t("admin.viewOnMap")}
                       </a>
+                    </div>
+                  </div>
+                )}
+
+                {providerSubs.has(selectedProvider.id) && (
+                  <div className="border-t pt-4">
+                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <CreditCard className="h-3.5 w-3.5" />
+                      {t("admin.subscriptions")}
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-0.5">
+                        <span className="text-xs text-muted-foreground">
+                          {t("admin.plan")}
+                        </span>
+                        <p className="text-sm font-medium">
+                          {providerSubs.get(selectedProvider.id)!.plan_name}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-xs text-muted-foreground">
+                          {t("admin.cycle")}
+                        </span>
+                        <p className="text-sm capitalize">
+                          {providerSubs.get(selectedProvider.id)!.billing_cycle === "monthly"
+                            ? t("admin.monthly") || "Monthly"
+                            : t("admin.yearly") || "Yearly"}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-xs text-muted-foreground">
+                          {t("admin.status")}
+                        </span>
+                        <Badge
+                          className={
+                            providerSubs.get(selectedProvider.id)!.status === "active"
+                              ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border-none"
+                              : providerSubs.get(selectedProvider.id)!.status === "past_due"
+                              ? "bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400 border-none"
+                              : "bg-muted text-muted-foreground border-none"
+                          }
+                        >
+                          {providerSubs.get(selectedProvider.id)!.status === "active"
+                            ? t("admin.active")
+                            : providerSubs.get(selectedProvider.id)!.status === "past_due"
+                            ? t("admin.pastDue") || "Past Due"
+                            : providerSubs.get(selectedProvider.id)!.status}
+                        </Badge>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-xs text-muted-foreground">
+                          {t("admin.periodEnd")}
+                        </span>
+                        <p className="text-sm" dir="ltr">
+                          {new Date(providerSubs.get(selectedProvider.id)!.current_period_end).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}

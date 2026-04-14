@@ -45,6 +45,7 @@ export default function SupportTicketsPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [replyText, setReplyText] = useState("");
@@ -69,11 +70,16 @@ export default function SupportTicketsPage() {
     let query = supabase
       .from("support_tickets")
       .select("*, provider:provider_profiles(business_name)", { count: "exact" })
+      .order("is_priority", { ascending: false })
       .order("created_at", { ascending: false })
       .range(offset, offset + pageSize - 1);
 
     if (statusFilter !== "all") {
       query = query.eq("status", statusFilter);
+    }
+
+    if (priorityFilter === "priority") {
+      query = query.eq("is_priority", true);
     }
 
     const { data, error, count } = await query;
@@ -93,7 +99,7 @@ export default function SupportTicketsPage() {
       setTickets(filtered);
     }
     setLoading(false);
-  }, [statusFilter, debouncedSearch, offset, pageSize]);
+  }, [statusFilter, priorityFilter, debouncedSearch, offset, pageSize]);
 
   useEffect(() => {
     fetchTickets();
@@ -217,6 +223,18 @@ export default function SupportTicketsPage() {
                   <SelectItem value="closed">{t("admin.supportTickets.closed")}</SelectItem>
                 </SelectContent>
               </Select>
+              <Select
+                value={priorityFilter}
+                onValueChange={(v) => v && setPriorityFilter(v)}
+              >
+                <SelectTrigger className="w-full sm:w-[160px]">
+                  <SelectValue placeholder={t("admin.supportTickets.priority")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("admin.supportTickets.all")}</SelectItem>
+                  <SelectItem value="priority">{t("admin.supportTickets.priorityOnly")}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardHeader>
           <CardContent>
@@ -234,6 +252,7 @@ export default function SupportTicketsPage() {
                     <TableRow>
                       <TableHead>{t("admin.supportTickets.provider")}</TableHead>
                       <TableHead>{t("admin.supportTickets.subject")}</TableHead>
+                      <TableHead>{t("admin.supportTickets.priority")}</TableHead>
                       <TableHead>{t("admin.supportTickets.status")}</TableHead>
                       <TableHead>{t("admin.supportTickets.createdAt")}</TableHead>
                       <TableHead className="text-end">{t("admin.actions")}</TableHead>
@@ -250,6 +269,15 @@ export default function SupportTicketsPage() {
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate text-muted-foreground">
                           {ticket.subject}
+                        </TableCell>
+                        <TableCell>
+                          {ticket.is_priority ? (
+                            <Badge className="bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border-none">
+                              {t("admin.supportTickets.priorityBadge")}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
                         </TableCell>
                         <TableCell>{statusBadge(ticket.status)}</TableCell>
                         <TableCell dir="ltr" className="text-muted-foreground text-xs">
@@ -318,6 +346,11 @@ export default function SupportTicketsPage() {
                       <p className="text-sm font-medium">
                         {selectedTicket.provider?.business_name || "—"}
                       </p>
+                      {selectedTicket.is_priority && (
+                        <Badge className="bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border-none">
+                          {t("admin.supportTickets.priorityBadge")}
+                        </Badge>
+                      )}
                       {statusBadge(selectedTicket.status)}
                     </div>
                     <p className="text-sm text-muted-foreground mt-0.5 truncate">

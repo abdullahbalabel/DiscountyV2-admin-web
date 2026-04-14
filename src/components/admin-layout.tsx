@@ -32,6 +32,9 @@ import {
   ChevronRight,
   Shield,
   MessageSquare,
+  CreditCard,
+  Receipt,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -201,6 +204,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         { href: "/categories", icon: FolderOpen, label: t("admin.categories") },
         { href: "/customers", icon: Users, label: t("admin.customers") },
         { href: "/reviews", icon: Star, label: t("admin.reviews") },
+      ],
+    },
+    {
+      label: t("admin.groupMonetization"),
+      items: [
+        { href: "/subscription-plans", icon: CreditCard, label: t("admin.subscriptionPlans") },
+        { href: "/subscriptions", icon: Receipt, label: t("admin.subscriptions") },
+        { href: "/stripe-settings", icon: Settings, label: t("admin.stripeSettingsNav") || "Stripe Settings" },
       ],
     },
     {

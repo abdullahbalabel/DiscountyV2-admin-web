@@ -74,6 +74,9 @@ const RESOURCES: PermissionResource[] = [
   "reports",
   "support_tickets",
   "data_requests",
+  "subscription_plans",
+  "subscriptions",
+  "stripe_settings",
 ];
 
 const ACTIONS: PermissionAction[] = ["view", "create", "edit", "delete", "manage"];
@@ -812,6 +815,12 @@ export default function AdminUsersPage() {
                                 ? t("admin.supportTickets.navTitle")
                                 : resource === "data_requests"
                                 ? t("admin.dataRequests.navTitle")
+                                : resource === "subscription_plans"
+                                ? t("admin.subscriptionPlans")
+                                : resource === "subscriptions"
+                                ? t("admin.subscriptions")
+                                : resource === "stripe_settings"
+                                ? t("admin.stripeSettings")
                                 : t(`admin.${resource}`) || resource}
                             </TableCell>
                             {ACTIONS.map((action) => {

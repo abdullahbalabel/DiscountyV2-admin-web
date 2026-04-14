@@ -156,6 +156,25 @@ export const adminGroupSchema = z.object({
   role_id: z.string().min(1, "Role is required"),
 });
 
+export const subscriptionPlanSchema = z.object({
+  name: z.string().min(1, "Required").max(50),
+  name_ar: z.string().min(1, "مطلوب").max(50),
+  description: z.string().max(200).optional().or(z.literal("")),
+  description_ar: z.string().max(200).optional().or(z.literal("")),
+  max_active_deals: z.coerce.number().int().min(1).max(999),
+  max_featured_deals: z.coerce.number().int().min(0).max(99),
+  has_analytics: z.boolean(),
+  max_push_notifications: z.coerce.number().int().min(0).max(999),
+  has_priority_support: z.boolean(),
+  profile_badge: z.string().max(20).optional().or(z.literal("")),
+  profile_badge_ar: z.string().max(20).optional().or(z.literal("")),
+  has_homepage_placement: z.boolean(),
+  monthly_price_sar: z.coerce.number().min(0).optional().nullable(),
+  yearly_price_sar: z.coerce.number().min(0).optional().nullable(),
+  is_active: z.boolean(),
+  sort_order: z.coerce.number().int().min(0),
+});
+
 export const dealConditionSchema = z.object({
   name: z.string().min(1).max(100),
   name_ar: z.string().min(1).max(100),
@@ -186,3 +205,4 @@ export type AdminGroupInput = z.infer<typeof adminGroupSchema>;
 export type DealConditionInput = z.infer<typeof dealConditionSchema>;
 export type RejectionReportReviewInput = z.infer<typeof rejectionReportReviewSchema>;
 export type DataRequestReviewInput = z.infer<typeof dataRequestReviewSchema>;
+export type SubscriptionPlanInput = z.infer<typeof subscriptionPlanSchema>;
