@@ -35,6 +35,7 @@ import {
   CreditCard,
   Receipt,
   Settings,
+  Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -88,6 +89,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [recentNotifs, setRecentNotifs] = useState<Notification[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("maintenance-banner-dismissed") === "true";
+    }
+    return false;
+  });
   const isRtl = i18n.language === "ar";
 
   const toggleCollapsed = () => {
@@ -134,6 +142,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   useEffect(() => {
     if (notifOpen) fetchRecentNotifs();
   }, [notifOpen, fetchRecentNotifs]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const checkMaintenance = async () => {
+      const { data } = await supabase.rpc("get_maintenance_status");
+      if (!cancelled && data && (data as { is_enabled: boolean }).is_enabled) {
+        setMaintenanceEnabled(true);
+      }
+    };
+    checkMaintenance();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -189,6 +209,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     }
   };
 
+  const dismissMaintenanceBanner = () => {
+    setBannerDismissed(true);
+    sessionStorage.setItem("maintenance-banner-dismissed", "true");
+  };
+
   const navGroups = [
     {
       label: t("admin.groupOverview"),
@@ -228,6 +253,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       items: [
         { href: "/deal-conditions", icon: ListChecks, label: t("admin.dealConditions.navTitle") },
         { href: "/admin-users", icon: ShieldCheck, label: t("admin.adminUsers") },
+        { href: "/maintenance", icon: Wrench, label: t("admin.maintenance") },
       ],
     },
   ];
@@ -394,6 +420,30 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Maintenance banner */}
+        {maintenanceEnabled && !bannerDismissed && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-yellow-500/15 border-b border-yellow-500/30 text-yellow-700 dark:text-yellow-400 shrink-0">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span className="text-sm font-medium">{t("admin.maintenanceBannerText")}</span>
+              <Link
+                href="/maintenance"
+                className="text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity"
+              >
+                {t("admin.maintenanceBannerLink")}
+              </Link>
+            </div>
+            <button
+              type="button"
+              onClick={dismissMaintenanceBanner}
+              className="p-1 rounded hover:bg-yellow-500/20 transition-colors"
+              aria-label={t("admin.close")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* Top bar */}
         <header className="h-14 border-b border-border/60 bg-card/80 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 shrink-0 sticky top-0 z-30">
           <Button

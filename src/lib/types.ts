@@ -134,7 +134,8 @@ export type PermissionResource =
   | "data_requests"
   | "subscription_plans"
   | "subscriptions"
-  | "stripe_settings";
+  | "stripe_settings"
+  | "maintenance";
 
 export interface AdminRole {
   id: string;
